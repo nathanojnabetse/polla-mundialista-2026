@@ -3,20 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Polla 🍆 Mundialista ⚽</title>
+  <title>Polla Mundialista</title>
 
   <style>
     :root{
       --green:#16a34a;
-      --dark:#07111f;
-      --blue:#123c69;
       --gold:#facc15;
-      --card:#ffffff;
       --muted:#64748b;
       --line:#e5e7eb;
       --text:#0f172a;
       --red:#dc2626;
-      --orange:#f97316;
     }
 
     *{box-sizing:border-box}
@@ -57,7 +53,7 @@
       position:relative;
       overflow:hidden;
       border-radius:30px;
-      padding:32px;
+      padding:34px;
       color:white;
       background:
         linear-gradient(135deg,rgba(22,163,74,.96),rgba(15,23,42,.98)),
@@ -69,46 +65,22 @@
     }
 
     .hero:after{
-      content:"⚽🍆";
+      content:"⚽";
       position:absolute;
       right:28px;
-      top:10px;
-      font-size:110px;
-      opacity:.16;
+      top:6px;
+      font-size:120px;
+      opacity:.18;
       transform:rotate(-12deg);
     }
 
     .hero h1{
       margin:0;
-      font-size:clamp(32px,5vw,58px);
+      font-size:clamp(36px,6vw,64px);
       line-height:.95;
       letter-spacing:-1px;
-    }
-
-    .hero p{
-      margin:12px 0 0;
-      max-width:760px;
-      color:#e2e8f0;
-      font-size:16px;
-    }
-
-    .toolbar{
-      display:flex;
-      gap:12px;
-      flex-wrap:wrap;
-      margin-top:20px;
-    }
-
-    .badge{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      padding:9px 13px;
-      border-radius:999px;
-      font-weight:800;
-      background:rgba(255,255,255,.16);
-      border:1px solid rgba(255,255,255,.22);
-      backdrop-filter:blur(8px);
+      position:relative;
+      z-index:2;
     }
 
     .grid{
@@ -193,7 +165,6 @@
     tr:last-child td{border-bottom:0}
 
     .right{text-align:right}
-    .center{text-align:center}
     .muted{color:var(--muted)}
     .small{font-size:12px}
     .strong{font-weight:900}
@@ -321,13 +292,8 @@
       font-weight:850;
     }
 
-    .winner{
-      color:#15803d;
-    }
-
-    .loser{
-      color:#94a3b8;
-    }
+    .winner{color:#15803d}
+    .loser{color:#94a3b8}
 
     .detail-grid{
       display:grid;
@@ -360,7 +326,6 @@
 
     .ok{color:#15803d}
     .bad{color:#dc2626}
-    .warn{color:#f97316}
 
     .rules{
       grid-template-columns:repeat(4,minmax(0,1fr));
@@ -381,21 +346,24 @@
       margin-bottom:6px;
     }
 
-    .error{
-      display:none;
-      margin-top:16px;
-      padding:14px;
-      border-radius:16px;
-      background:#fef2f2;
-      color:#991b1b;
-      border:1px solid #fecaca;
-      font-weight:700;
-    }
-
     .loading{
       color:white;
       margin:20px 0;
       font-weight:800;
+      padding:14px 18px;
+      border-radius:18px;
+      background:rgba(255,255,255,.12);
+      border:1px solid rgba(255,255,255,.18);
+    }
+
+    .error-card{
+      background:#fef2f2;
+      color:#991b1b;
+      border:1px solid #fecaca;
+      border-radius:18px;
+      padding:16px;
+      font-weight:700;
+      margin-top:16px;
     }
 
     @media(max-width:980px){
@@ -417,11 +385,10 @@
 <body>
   <div class="wrap">
     <section class="hero">
-      <h1>Polla 🍆 Mundialista ⚽</h1>
-
+      <h1>Polla Mundialista ⚽</h1>
     </section>
 
-    <div id="loading" class="loading">Cargando datos desde Google Sheets...</div>
+    <div id="loading" class="loading">Cargando datos...</div>
 
     <section class="grid kpis" id="kpis"></section>
 
@@ -472,8 +439,6 @@
     ];
 
     const DEFAULT_CONFIG = {
-      nombre_polla: "Polla Mundialista Knockouts",
-      moneda: "USD",
       aporte_por_participante: 10,
       premio_consuelo_fijo: 1,
       minimo_pronosticos_consuelo: 0.8,
@@ -499,7 +464,9 @@
       "Bélgica":"🇧🇪","Belgium":"🇧🇪","Suiza":"🇨🇭","Switzerland":"🇨🇭","Senegal":"🇸🇳",
       "Ghana":"🇬🇭","Noruega":"🇳🇴","Norway":"🇳🇴","Suecia":"🇸🇪","Sweden":"🇸🇪",
       "Australia":"🇦🇺","Egipto":"🇪🇬","Egypt":"🇪🇬","Paraguay":"🇵🇾","Austria":"🇦🇹",
-      "Argelia":"🇩🇿","Algeria":"🇩🇿","Sudáfrica":"🇿🇦","South Africa":"🇿🇦"
+      "Argelia":"🇩🇿","Algeria":"🇩🇿","Sudáfrica":"🇿🇦","South Africa":"🇿🇦",
+      "Ivory Coast":"🇨🇮","Costa de Marfil":"🇨🇮","DR Congo":"🇨🇩","Cape Verde":"🇨🇻",
+      "Bosnia and Herzegovina":"🇧🇦"
     };
 
     function clean(v){
@@ -517,7 +484,11 @@
 
     function num(v){
       if(v === null || v === undefined || v === "") return null;
-      const n = Number(String(v).replace(",","."));
+      let s = String(v).trim();
+      s = s.replace(/[^\d,.-]/g, "");
+      if(s.includes(",") && !s.includes(".")) s = s.replace(",", ".");
+      if(s.includes(",") && s.includes(".")) s = s.replace(/,/g, "");
+      const n = Number(s);
       return Number.isFinite(n) ? n : null;
     }
 
@@ -526,92 +497,104 @@
       return "$" + n.toFixed(2);
     }
 
-    function pct(v){
-      return Math.round(Number(v || 0) * 100) + "%";
+    function isFinal(v){
+      const s = norm(v);
+      return s.includes("final") || s.includes("terminado") || s.includes("jugado");
+    }
+
+    function isCompletedResult(r){
+      if(!r) return false;
+      const g1 = num(r.goles_1_real);
+      const g2 = num(r.goles_2_real);
+      const clasifica = clean(r.clasifica_real);
+      return isFinal(r.estado) || (g1 !== null && g2 !== null && !!clasifica);
     }
 
     function statusClass(v){
       const s = norm(v);
-      if(s.includes("final")) return "finalizado";
+      if(s.includes("final") || s.includes("terminado") || s.includes("jugado")) return "finalizado";
       if(s.includes("suspend")) return "suspendido";
       return "pendiente";
     }
 
-    function isFinal(v){
-      return norm(v).includes("final");
-    }
-
     function esc(s){
       return clean(s).replace(/[&<>"']/g, m => ({
-        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+        "&":"&amp;",
+        "<":"&lt;",
+        ">":"&gt;",
+        '"':"&quot;",
+        "'":"&#039;"
       }[m]));
     }
 
     function fetchSheet(sheetName){
-    return new Promise((resolve, reject) => {
+      return new Promise((resolve, reject) => {
         const callbackName = "gsCallback_" + Date.now() + "_" + Math.floor(Math.random() * 100000);
+        const cacheBust = Date.now();
 
         const url =
-        `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq` +
-        `?sheet=${encodeURIComponent(sheetName)}` +
-        `&tqx=out:json;responseHandler:${callbackName}`;
+          `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq` +
+          `?sheet=${encodeURIComponent(sheetName)}` +
+          `&headers=1` +
+          `&tqx=out:json;responseHandler:${callbackName}` +
+          `&cacheBust=${cacheBust}`;
 
         const script = document.createElement("script");
 
         const cleanup = () => {
-        delete window[callbackName];
-        if (script.parentNode) script.parentNode.removeChild(script);
-        clearTimeout(timer);
+          delete window[callbackName];
+          if(script.parentNode) script.parentNode.removeChild(script);
+          clearTimeout(timer);
         };
 
         const timer = setTimeout(() => {
-        cleanup();
-        reject(new Error(`Tiempo agotado leyendo la hoja ${sheetName}`));
-        }, 12000);
+          cleanup();
+          reject(new Error(`Tiempo agotado leyendo la hoja ${sheetName}`));
+        }, 15000);
 
         window[callbackName] = function(json){
-        try{
+          try{
             const table = json.table;
 
             const headers = table.cols.map((c, i) => {
-            return clean(c.label || c.id || `col_${i}`);
+              return clean(c.label || c.id || `col_${i}`);
             });
 
             const rows = table.rows.map(r => {
-            const obj = {};
-            headers.forEach((h, i) => {
+              const obj = {};
+              headers.forEach((h, i) => {
                 const cell = r.c[i];
                 obj[h] = cell ? (cell.f ?? cell.v ?? "") : "";
-            });
-            return obj;
+              });
+              return obj;
             });
 
             cleanup();
             resolve(rows.filter(row => Object.values(row).some(v => clean(v) !== "")));
-        }catch(e){
+          }catch(e){
             cleanup();
             reject(e);
-        }
+          }
         };
 
         script.onerror = () => {
-        cleanup();
-        reject(new Error(`No se pudo cargar la hoja ${sheetName}`));
+          cleanup();
+          reject(new Error(`No se pudo cargar la hoja ${sheetName}`));
         };
 
         script.src = url;
         document.body.appendChild(script);
-    });
-}
+      });
+    }
 
     async function loadData(){
       const data = {};
-      await Promise.all(SHEETS.map(async s => {
+      await Promise.all(SHEETS.map(async sheet => {
         try{
-          data[s] = await fetchSheet(s);
+          data[sheet] = await fetchSheet(sheet);
         }catch(e){
-          data[s] = [];
           console.warn(e);
+          data[sheet] = [];
         }
       }));
       return data;
@@ -623,6 +606,7 @@
         const key = clean(r.clave || r.key || r.parametro);
         const value = r.valor ?? r.value ?? "";
         if(!key) return;
+
         const n = num(value);
         cfg[key] = n !== null && value !== "" ? n : value;
       });
@@ -631,29 +615,35 @@
 
     function buildEmojiMap(equipos){
       const m = {...FALLBACK_EMOJIS};
+
       equipos.forEach(r => {
         const equipo = clean(r.equipo || r.Equipo || r.team);
         const emoji = clean(r.emoji || r.Emoji || r.bandera);
         if(equipo && emoji) m[equipo] = emoji;
       });
+
       return m;
     }
 
     function emojiOf(team, emojiMap){
       if(!team) return "";
       if(emojiMap[team]) return emojiMap[team];
+
       const key = Object.keys(emojiMap).find(k => norm(k) === norm(team));
       return key ? emojiMap[key] : "🏳️";
     }
 
     function loserOf(result, p){
-      const clasifica = clean(result.clasifica_real);
-      if(!clasifica) return clean(result.pierde_real);
-      const e1 = clean(result.equipo_1 || p?.equipo_1);
-      const e2 = clean(result.equipo_2 || p?.equipo_2);
+      const clasifica = clean(result?.clasifica_real);
+      if(!clasifica) return clean(result?.pierde_real);
+
+      const e1 = clean(result?.equipo_1 || p?.equipo_1_resuelto || p?.equipo_1 || p?.equipo_1_manual);
+      const e2 = clean(result?.equipo_2 || p?.equipo_2_resuelto || p?.equipo_2 || p?.equipo_2_manual);
+
       if(norm(clasifica) === norm(e1)) return e2;
       if(norm(clasifica) === norm(e2)) return e1;
-      return clean(result.pierde_real);
+
+      return clean(result?.pierde_real);
     }
 
     function resolveBracket(partidos, resultados, emojiMap){
@@ -661,31 +651,45 @@
       const partMap = new Map(partidos.map(p => [clean(p.id_partido), p]));
 
       function resolveSide(p, side){
-        const tipo = clean(p[`source_${side}_tipo`]);
+        const tipo = norm(p[`source_${side}_tipo`]);
         const ref = clean(p[`source_${side}_partido`]);
         const manual = clean(p[`equipo_${side}_manual`]);
         const formula = clean(p[`equipo_${side}`]);
 
-        if(formula && !formula.startsWith("Ganador") && !formula.startsWith("Perdedor")) return formula;
-        if(tipo === "Manual") return manual || formula;
-        if(tipo === "Ganador"){
+        if(formula && !norm(formula).startsWith("ganador") && !norm(formula).startsWith("perdedor")){
+          return formula;
+        }
+
+        if(tipo === "manual"){
+          return manual || formula;
+        }
+
+        if(tipo === "ganador"){
           const r = resMap.get(ref);
           return clean(r?.clasifica_real) || `Ganador ${ref}`;
         }
-        if(tipo === "Perdedor"){
+
+        if(tipo === "perdedor"){
           const r = resMap.get(ref);
           const refPart = partMap.get(ref);
           return loserOf(r || {}, refPart) || `Perdedor ${ref}`;
         }
-        return formula || manual;
+
+        return manual || formula;
       }
 
-      for(let i=0;i<5;i++){
+      for(let i = 0; i < 5; i++){
         partidos.forEach(p => {
           p.equipo_1_resuelto = resolveSide(p, "1");
           p.equipo_2_resuelto = resolveSide(p, "2");
-          p.emoji_1_resuelto = clean(p.emoji_1 || p.emoji_1_manual) || emojiOf(p.equipo_1_resuelto, emojiMap);
-          p.emoji_2_resuelto = clean(p.emoji_2 || p.emoji_2_manual) || emojiOf(p.equipo_2_resuelto, emojiMap);
+
+          p.emoji_1_resuelto =
+            clean(p.emoji_1 || p.emoji_1_manual) ||
+            emojiOf(p.equipo_1_resuelto, emojiMap);
+
+          p.emoji_2_resuelto =
+            clean(p.emoji_2 || p.emoji_2_manual) ||
+            emojiOf(p.equipo_2_resuelto, emojiMap);
         });
       }
 
@@ -693,29 +697,66 @@
     }
 
     function calcScores(data, cfg, emojiMap){
-      const participantes = data.PARTICIPANTES
+      const participantesMap = new Map();
+
+      data.PARTICIPANTES
         .filter(r => clean(r.participante))
         .filter(r => !["no","false","0","inactivo"].includes(norm(r.activo)))
-        .map(r => ({
-          nombre: clean(r.participante),
-          aporte: num(r.aporte) ?? Number(cfg.aporte_por_participante || 10)
-        }));
+        .forEach(r => {
+          const nombre = clean(r.participante);
+          participantesMap.set(norm(nombre), {
+            nombre,
+            aporte: num(r.aporte) ?? Number(cfg.aporte_por_participante || 10)
+          });
+        });
 
-      const partidos = resolveBracket(data.PARTIDOS.map(r => ({...r})), data.RESULTADOS, emojiMap)
-        .filter(p => clean(p.id_partido));
+      data.PRONOSTICOS.forEach(r => {
+        const nombre = clean(r.participante);
+        if(!nombre) return;
+
+        if(!participantesMap.has(norm(nombre))){
+          participantesMap.set(norm(nombre), {
+            nombre,
+            aporte: Number(cfg.aporte_por_participante || 10)
+          });
+        }
+      });
+
+      data.BONOS.forEach(r => {
+        const nombre = clean(r.participante);
+        if(!nombre) return;
+
+        if(!participantesMap.has(norm(nombre))){
+          participantesMap.set(norm(nombre), {
+            nombre,
+            aporte: Number(cfg.aporte_por_participante || 10)
+          });
+        }
+      });
+
+      const participantes = Array.from(participantesMap.values());
+
+      const partidos = resolveBracket(
+        data.PARTIDOS.map(r => ({...r})).filter(p => clean(p.id_partido)),
+        data.RESULTADOS,
+        emojiMap
+      );
 
       const partMap = new Map(partidos.map(p => [clean(p.id_partido), p]));
       const resMap = new Map(data.RESULTADOS.map(r => [clean(r.id_partido), r]));
+
       const predMap = new Map();
 
       data.PRONOSTICOS.forEach(p => {
         const participante = clean(p.participante);
         const id = clean(p.id_partido);
         if(!participante || !id) return;
-        predMap.set(`${norm(participante)}|${id}`, p);
+
+        predMap.set(`${norm(participante)}|${clean(id)}`, p);
       });
 
       const stats = new Map();
+
       participantes.forEach(p => {
         stats.set(norm(p.nombre), {
           participante:p.nombre,
@@ -734,7 +775,8 @@
       partidos.forEach(match => {
         const id = clean(match.id_partido);
         const r = resMap.get(id) || {};
-        const finalizado = isFinal(r.estado);
+        const finalizado = isCompletedResult(r);
+
         const g1r = num(r.goles_1_real);
         const g2r = num(r.goles_2_real);
         const clasificaReal = clean(r.clasifica_real);
@@ -742,13 +784,11 @@
         participantes.forEach(part => {
           const st = stats.get(norm(part.nombre));
           const pred = predMap.get(`${norm(part.nombre)}|${id}`);
+
           let puntos = 0;
           let tipo = "Sin pronóstico";
-          let exacto = false;
-          let enviado = false;
 
           if(pred && clean(pred.clasifica_pred)){
-            enviado = true;
             st.pronosticos_enviados++;
           }
 
@@ -765,7 +805,6 @@
               if(clasificadoOk && marcadorExacto){
                 puntos = Number(cfg.puntos_exactos || 5);
                 tipo = "Exacto";
-                exacto = true;
                 st.exactos++;
                 st.clasificados++;
               }else if(clasificadoOk && difOk){
@@ -781,12 +820,14 @@
                 tipo = "Falló";
               }
             }
-          }else if(!finalizado && enviado){
+          }else if(!finalizado && pred && clean(pred.clasifica_pred)){
             tipo = "Pendiente";
           }
 
           st.puntos_partidos += puntos;
+
           st.detalle.push({
+            participante: part.nombre,
             id,
             fase: clean(match.fase),
             equipo_1: match.equipo_1_resuelto,
@@ -800,13 +841,13 @@
             goles_2_pred: pred ? clean(pred.goles_2_pred) : "",
             clasifica_pred: pred ? clean(pred.clasifica_pred) : "",
             puntos,
-            tipo,
-            exacto
+            tipo
           });
         });
       });
 
       const realBonuses = {};
+
       data.RESULTADOS_BONOS.forEach(r => {
         const bono = norm(r.bono);
         const valor = clean(r.valor_real);
@@ -819,10 +860,20 @@
 
       realBonuses.campeon = realBonuses.campeon || clean(r104.clasifica_real);
       realBonuses.subcampeon = realBonuses.subcampeon || loserOf(r104, partMap.get("M104"));
-      realBonuses.semifinalista_1 = realBonuses.semifinalista_1 || clean(m101.equipo_1_resuelto);
-      realBonuses.semifinalista_2 = realBonuses.semifinalista_2 || clean(m101.equipo_2_resuelto);
-      realBonuses.semifinalista_3 = realBonuses.semifinalista_3 || clean(m102.equipo_1_resuelto);
-      realBonuses.semifinalista_4 = realBonuses.semifinalista_4 || clean(m102.equipo_2_resuelto);
+
+      const sf = [
+        clean(m101.equipo_1_resuelto),
+        clean(m101.equipo_2_resuelto),
+        clean(m102.equipo_1_resuelto),
+        clean(m102.equipo_2_resuelto)
+      ].filter(x => x && !norm(x).startsWith("ganador") && !norm(x).startsWith("perdedor"));
+
+      if(sf.length === 4){
+        realBonuses.semifinalista_1 = realBonuses.semifinalista_1 || sf[0];
+        realBonuses.semifinalista_2 = realBonuses.semifinalista_2 || sf[1];
+        realBonuses.semifinalista_3 = realBonuses.semifinalista_3 || sf[2];
+        realBonuses.semifinalista_4 = realBonuses.semifinalista_4 || sf[3];
+      }
 
       const semifinalistasReales = [
         realBonuses.semifinalista_1,
@@ -836,13 +887,24 @@
         if(!st) return;
 
         let pts = 0;
-        if(realBonuses.campeon && norm(b.campeon) === norm(realBonuses.campeon)) pts += Number(cfg.bono_campeon || 20);
-        if(realBonuses.subcampeon && norm(b.subcampeon) === norm(realBonuses.subcampeon)) pts += Number(cfg.bono_subcampeon || 12);
-        if(realBonuses.goleador && norm(b.goleador) === norm(realBonuses.goleador)) pts += Number(cfg.bono_goleador || 10);
+
+        if(realBonuses.campeon && norm(b.campeon) === norm(realBonuses.campeon)){
+          pts += Number(cfg.bono_campeon || 20);
+        }
+
+        if(realBonuses.subcampeon && norm(b.subcampeon) === norm(realBonuses.subcampeon)){
+          pts += Number(cfg.bono_subcampeon || 12);
+        }
+
+        if(realBonuses.goleador && norm(b.goleador) === norm(realBonuses.goleador)){
+          pts += Number(cfg.bono_goleador || 10);
+        }
 
         ["semifinalista_1","semifinalista_2","semifinalista_3","semifinalista_4"].forEach(k => {
           const pred = norm(b[k]);
-          if(pred && semifinalistasReales.includes(pred)) pts += Number(cfg.bono_semifinalista || 8);
+          if(pred && semifinalistasReales.includes(pred)){
+            pts += Number(cfg.bono_semifinalista || 8);
+          }
         });
 
         st.puntos_bonos = pts;
@@ -858,7 +920,7 @@
         a.participante.localeCompare(b.participante)
       );
 
-      return {participantes, partidos, resultados:data.RESULTADOS, ranking, stats, realBonuses};
+      return {participantes, partidos, resultados:data.RESULTADOS, ranking, realBonuses};
     }
 
     function calcAwards(ranking, participantes, cfg){
@@ -873,6 +935,7 @@
       )[0];
 
       const minRatio = Number(cfg.minimo_pronosticos_consuelo || 0.8);
+
       const eligible = ranking.filter(r => {
         const ratio = r.posibles_pronosticos ? r.pronosticos_enviados / r.posibles_pronosticos : 0;
         return ratio >= minRatio;
@@ -901,10 +964,11 @@
     function renderKPIs(model, awards){
       const jugados = model.partidos.filter(p => {
         const r = model.resultados.find(x => clean(x.id_partido) === clean(p.id_partido));
-        return r && isFinal(r.estado);
+        return isCompletedResult(r);
       }).length;
 
       const lider = model.ranking[0]?.participante || "-";
+
       const html = [
         ["👑 Líder", lider],
         ["👥 Participantes", model.participantes.length],
@@ -957,6 +1021,7 @@
       ranking.forEach((r,i) => {
         const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1;
         const cls = i === 0 ? "r1" : i === 1 ? "r2" : i === 2 ? "r3" : "";
+
         html += `
           <tr>
             <td><span class="rank ${cls}">${medal}</span></td>
@@ -1019,6 +1084,7 @@
     function renderBracket(model){
       const order = ["Ronda de 32","Octavos","Cuartos","Semis","Final"];
       const groups = {};
+
       model.partidos.forEach(p => {
         const name = roundName(p.fase);
         if(!groups[name]) groups[name] = [];
@@ -1032,13 +1098,13 @@
             <h3>${r}</h3>
             ${groups[r].map(p => {
               const res = model.resultados.find(x => clean(x.id_partido) === clean(p.id_partido)) || {};
-              const final = isFinal(res.estado);
+              const final = isCompletedResult(res);
               const win = clean(res.clasifica_real);
               const e1 = clean(p.equipo_1_resuelto);
               const e2 = clean(p.equipo_2_resuelto);
+
               const c1 = final && norm(win) === norm(e1) ? "winner" : final ? "loser" : "";
               const c2 = final && norm(win) === norm(e2) ? "winner" : final ? "loser" : "";
-              const score = final ? `${clean(res.goles_1_real)} - ${clean(res.goles_2_real)}` : "vs";
 
               return `
                 <div class="mini-match">
@@ -1051,7 +1117,7 @@
                     <span>${esc(p.emoji_2_resuelto)} ${esc(e2)}</span>
                     <span>${final ? esc(res.goles_2_real) : ""}</span>
                   </div>
-                  <div class="small muted">${final ? "Clasifica: " + esc(win) : score}</div>
+                  <div class="small muted">${final ? "Clasifica: " + esc(win) : "vs"}</div>
                 </div>
               `;
             }).join("")}
@@ -1061,9 +1127,10 @@
 
     function renderMatches(model){
       const sorted = [...model.partidos].sort((a,b) => Number(a.orden || 999) - Number(b.orden || 999));
+
       document.getElementById("matches").innerHTML = sorted.map(p => {
         const r = model.resultados.find(x => clean(x.id_partido) === clean(p.id_partido)) || {};
-        const final = isFinal(r.estado);
+        const final = isCompletedResult(r);
         const estado = clean(r.estado || p.estado || "Pendiente");
         const score = final ? `${clean(r.goles_1_real)} - ${clean(r.goles_2_real)}` : "vs";
 
@@ -1074,11 +1141,13 @@
               <span class="pill">${esc(roundName(p.fase))}</span>
               <span class="status ${statusClass(estado)}">${esc(estado)}</span>
             </div>
+
             <div class="teams">
               <div class="team">${esc(p.emoji_1_resuelto)} ${esc(p.equipo_1_resuelto)}</div>
               <div class="score">${esc(score)}</div>
               <div class="team">${esc(p.equipo_2_resuelto)} ${esc(p.emoji_2_resuelto)}</div>
             </div>
+
             <div class="meta">
               <span>📅 ${esc(p.fecha)}</span>
               <span>🕒 ${esc(p.hora_ecuador)}</span>
@@ -1092,7 +1161,7 @@
     function renderDetails(model){
       const completed = model.partidos.filter(p => {
         const r = model.resultados.find(x => clean(x.id_partido) === clean(p.id_partido));
-        return r && isFinal(r.estado);
+        return isCompletedResult(r);
       });
 
       if(!completed.length){
@@ -1107,15 +1176,17 @@
         const rows = model.ranking
           .map(st => st.detalle.find(d => d.id === clean(p.id_partido)))
           .filter(Boolean)
-          .sort((a,b) => b.puntos - a.puntos || a.clasifica_pred.localeCompare(b.clasifica_pred));
+          .sort((a,b) => b.puntos - a.puntos || a.participante.localeCompare(b.participante));
 
         return `
           <div class="prediction-card">
             <h3>${esc(p.emoji_1_resuelto)} ${esc(p.equipo_1_resuelto)} ${esc(r.goles_1_real)} - ${esc(r.goles_2_real)} ${esc(p.equipo_2_resuelto)} ${esc(p.emoji_2_resuelto)}</h3>
+
             <div class="meta">
               <span class="pill">${esc(p.id_partido)}</span>
               <span>✅ Clasifica: <b>${esc(r.clasifica_real)}</b></span>
             </div>
+
             <div style="margin-top:12px">
               ${rows.map(d => {
                 const icon = d.puntos >= 5 ? "🎯" : d.puntos > 0 ? "✅" : "❌";
@@ -1126,7 +1197,7 @@
 
                 return `
                   <div class="pred-row">
-                    <div class="strong">${icon} ${esc(model.ranking.find(x => x.detalle.includes(d))?.participante || "")}</div>
+                    <div class="strong">${icon} ${esc(d.participante)}</div>
                     <div>${pred}</div>
                     <div class="${cls}">${esc(d.tipo)}</div>
                     <div class="pts">${d.puntos} pts</div>
@@ -1151,14 +1222,13 @@
       renderDetails(model);
 
       document.getElementById("loading").style.display = "none";
-      document.getElementById("lastUpdate").textContent = "Actualizado: " + new Date().toLocaleString("es-EC");
     }
 
     function showError(msg){
-      const box = document.getElementById("errorBox");
-      box.style.display = "block";
-      box.innerHTML = msg;
-      document.getElementById("loading").style.display = "none";
+      const loading = document.getElementById("loading");
+      loading.style.display = "block";
+      loading.className = "error-card";
+      loading.innerHTML = msg;
     }
 
     async function main(){
@@ -1170,8 +1240,8 @@
 
         if(!model.participantes.length){
           showError(`
-            No pude leer participantes. Revisa que la hoja tenga una pestaña llamada <b>PARTICIPANTES</b>
-            y que el archivo esté compartido como lector.
+            No pude leer participantes. Revisa que exista la hoja <b>PARTICIPANTES</b>
+            o que al menos haya nombres en <b>PRONOSTICOS</b>.
           `);
           return;
         }
@@ -1183,8 +1253,8 @@
           No pude cargar la Google Sheet.<br><br>
           Revisa esto:<br>
           1. Compartir → Cualquier persona con enlace → Lector.<br>
-          2. Si tu archivo sigue siendo Excel, ve a Archivo → Guardar como Hojas de cálculo de Google.<br>
-          3. Verifica que existan las hojas: CONFIG, PARTICIPANTES, EQUIPOS, PARTIDOS, RESULTADOS, PRONOSTICOS, BONOS y RESULTADOS_BONOS.<br><br>
+          2. Verifica que existan estas hojas: CONFIG, PARTICIPANTES, EQUIPOS, PARTIDOS, RESULTADOS, PRONOSTICOS, BONOS y RESULTADOS_BONOS.<br>
+          3. Revisa que el ID de Google Sheets sea correcto.<br><br>
           Error: ${esc(e.message)}
         `);
       }
