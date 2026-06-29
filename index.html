@@ -1,556 +1,355 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Polla 🍆 Mundialista ⚽</title>
+ChatGPT
 
-  <style>
-    :root{
-      --green:#16a34a;
-      --dark:#07111f;
-      --blue:#123c69;
-      --gold:#facc15;
-      --card:#ffffff;
-      --muted:#64748b;
-      --line:#e5e7eb;
-      --text:#0f172a;
-      --red:#dc2626;
-      --orange:#f97316;
-    }
 
-    *{box-sizing:border-box}
 
-    body{
-      margin:0;
-      font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
-      color:var(--text);
-      background:
-        radial-gradient(circle at top left,rgba(34,197,94,.35),transparent 28%),
-        radial-gradient(circle at top right,rgba(250,204,21,.25),transparent 24%),
-        linear-gradient(135deg,#052e16,#0f172a 48%,#111827);
-      min-height:100vh;
-    }
+El error tiene sentido: el HTML que te pasé quedó apuntando al ID anterior. Con este nuevo link solo hay que cambiar el GOOGLE_SHEET_ID; también te dejo una pequeña mejora para que el mensaje de error sea más claro.
 
-    body:before{
-      content:"";
-      position:fixed;
-      inset:0;
-      pointer-events:none;
-      opacity:.12;
-      background-image:
-        linear-gradient(90deg,rgba(255,255,255,.18) 1px,transparent 1px),
-        linear-gradient(rgba(255,255,255,.18) 1px,transparent 1px);
-      background-size:80px 80px;
-      mask-image:linear-gradient(to bottom,black,transparent 85%);
-    }
+Ya abrí tu nuevo archivo y sí se ve como Google Sheet nativo, con pestañas PARTICIPANTES, PARTIDOS, RESULTADOS, etc. El problema más probable ya no es la hoja, sino el HTML: seguía con el ID anterior o el navegador está bloqueando fetch desde Google Sheets.
 
-    .wrap{
-      max-width:1260px;
-      margin:0 auto;
-      padding:24px;
-      position:relative;
-      z-index:1;
-    }
+Pensó durante 32s
+Sí, ya vi el problema. Tu nuevo archivo sí aparece como Google Sheet y sí tiene las pestañas PARTICIPANTES, EQUIPOS, PARTIDOS, RESULTADOS, PRONOSTICOS, BONOS y RESULTADOS_BONOS. 
 
-    .hero{
-      position:relative;
-      overflow:hidden;
-      border-radius:30px;
-      padding:32px;
-      color:white;
-      background:
-        linear-gradient(135deg,rgba(22,163,74,.96),rgba(15,23,42,.98)),
-        url("https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?auto=format&fit=crop&w=1600&q=70");
-      background-size:cover;
-      background-position:center;
-      box-shadow:0 24px 70px rgba(0,0,0,.35);
-      border:1px solid rgba(255,255,255,.15);
-    }
+Haz dos cambios en tu HTML:
 
-    .hero:after{
-      content:"⚽🍆";
-      position:absolute;
-      right:28px;
-      top:10px;
-      font-size:110px;
-      opacity:.16;
-      transform:rotate(-12deg);
-    }
+1. Cambia el ID de la hoja
+Busca esta línea:
 
-    .hero h1{
-      margin:0;
-      font-size:clamp(32px,5vw,58px);
-      line-height:.95;
-      letter-spacing:-1px;
-    }
+const GOOGLE_SHEET_ID = "1CHA7DOqjC11vV_zDREcamyad_WpdKbWb";
+y reemplázala por:
 
-    .hero p{
-      margin:12px 0 0;
-      max-width:760px;
-      color:#e2e8f0;
-      font-size:16px;
-    }
+const GOOGLE_SHEET_ID = "1oGnsg_GiF192_8JplZvYoTEgJoVGcGuytFaqqqz57JA";
+2. Reemplaza la función fetchSheet
+Busca esta función completa en tu HTML:
 
-    .toolbar{
-      display:flex;
-      gap:12px;
-      flex-wrap:wrap;
-      margin-top:20px;
-    }
+async function fetchSheet(sheetName){
+y reemplázala completa por esta versión:
 
-    .badge{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      padding:9px 13px;
-      border-radius:999px;
-      font-weight:800;
-      background:rgba(255,255,255,.16);
-      border:1px solid rgba(255,255,255,.22);
-      backdrop-filter:blur(8px);
-    }
+function fetchSheet(sheetName){
+  return new Promise((resolve, reject) => {
+    const callbackName = "gsCallback_" + Date.now() + "_" + Math.floor(Math.random() * 100000);
 
-    .grid{
-      display:grid;
-      gap:16px;
-    }
+    const url =
+      `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq` +
+      `?sheet=${encodeURIComponent(sheetName)}` +
+      `&tqx=out:json;responseHandler:${callbackName}`;
 
-    .kpis{
-      grid-template-columns:repeat(4,minmax(0,1fr));
-      margin-top:18px;
-    }
+    const script = document.createElement("script");
 
-    .awards{
-      grid-template-columns:repeat(5,minmax(0,1fr));
-      margin-top:16px;
-    }
-
-    .two{
-      grid-template-columns:1.05fr .95fr;
-      align-items:start;
-    }
-
-    .card{
-      background:rgba(255,255,255,.96);
-      border:1px solid var(--line);
-      border-radius:22px;
-      padding:18px;
-      box-shadow:0 14px 35px rgba(15,23,42,.14);
-      backdrop-filter:blur(10px);
-    }
-
-    .label{
-      font-size:12px;
-      color:var(--muted);
-      text-transform:uppercase;
-      letter-spacing:.08em;
-      font-weight:900;
-    }
-
-    .value{
-      margin-top:6px;
-      font-size:30px;
-      font-weight:950;
-      letter-spacing:-.5px;
-    }
-
-    h2{
-      color:white;
-      margin:30px 0 12px;
-      font-size:24px;
-      letter-spacing:-.4px;
-    }
-
-    h3{
-      margin:0 0 12px;
-    }
-
-    table{
-      width:100%;
-      border-collapse:collapse;
-      overflow:hidden;
-      border-radius:16px;
-    }
-
-    th,td{
-      padding:11px 10px;
-      border-bottom:1px solid var(--line);
-      text-align:left;
-      font-size:14px;
-      vertical-align:middle;
-    }
-
-    th{
-      background:#f8fafc;
-      color:#334155;
-      font-size:12px;
-      text-transform:uppercase;
-      letter-spacing:.06em;
-      font-weight:900;
-    }
-
-    tr:last-child td{border-bottom:0}
-
-    .right{text-align:right}
-    .center{text-align:center}
-    .muted{color:var(--muted)}
-    .small{font-size:12px}
-    .strong{font-weight:900}
-
-    .rank{
-      display:inline-flex;
-      min-width:36px;
-      justify-content:center;
-      padding:5px 9px;
-      border-radius:999px;
-      background:#e2e8f0;
-      font-weight:950;
-    }
-
-    .r1{background:#fef3c7;color:#92400e}
-    .r2{background:#e2e8f0;color:#334155}
-    .r3{background:#ffedd5;color:#9a3412}
-
-    .status{
-      display:inline-flex;
-      padding:5px 9px;
-      border-radius:999px;
-      font-size:12px;
-      font-weight:900;
-      background:#fef3c7;
-      color:#92400e;
-    }
-
-    .status.finalizado{
-      background:#dcfce7;
-      color:#166534;
-    }
-
-    .status.suspendido{
-      background:#fee2e2;
-      color:#991b1b;
-    }
-
-    .pill{
-      display:inline-flex;
-      align-items:center;
-      gap:6px;
-      padding:5px 10px;
-      border-radius:999px;
-      background:#eef2ff;
-      color:#3730a3;
-      font-weight:850;
-      font-size:12px;
-      white-space:nowrap;
-    }
-
-    .match-card{
-      display:flex;
-      flex-direction:column;
-      gap:10px;
-      border-left:6px solid var(--green);
-    }
-
-    .teams{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-      font-size:18px;
-      font-weight:950;
-    }
-
-    .team{
-      flex:1;
-    }
-
-    .team:last-child{
-      text-align:right;
-    }
-
-    .score{
-      min-width:82px;
-      text-align:center;
-      font-size:24px;
-      font-weight:950;
-      color:#0f172a;
-      background:#f1f5f9;
-      border-radius:16px;
-      padding:8px 10px;
-    }
-
-    .meta{
-      display:flex;
-      gap:8px;
-      flex-wrap:wrap;
-      align-items:center;
-      color:var(--muted);
-      font-size:13px;
-    }
-
-    .bracket{
-      grid-template-columns:repeat(5,minmax(0,1fr));
-      align-items:start;
-    }
-
-    .round h3{
-      color:#fff;
-      background:linear-gradient(135deg,#16a34a,#14532d);
-      border-radius:16px;
-      padding:12px;
-      text-align:center;
-      margin-bottom:12px;
-      box-shadow:0 10px 25px rgba(0,0,0,.16);
-    }
-
-    .mini-match{
-      background:rgba(255,255,255,.96);
-      border:1px solid var(--line);
-      border-radius:18px;
-      padding:12px;
-      margin-bottom:10px;
-      box-shadow:0 10px 28px rgba(15,23,42,.12);
-    }
-
-    .mini-line{
-      display:flex;
-      justify-content:space-between;
-      gap:8px;
-      padding:5px 0;
-      font-weight:850;
-    }
-
-    .winner{
-      color:#15803d;
-    }
-
-    .loser{
-      color:#94a3b8;
-    }
-
-    .detail-grid{
-      display:grid;
-      gap:14px;
-    }
-
-    .prediction-card{
-      background:rgba(255,255,255,.96);
-      border:1px solid var(--line);
-      border-radius:22px;
-      padding:16px;
-      box-shadow:0 12px 30px rgba(15,23,42,.12);
-    }
-
-    .pred-row{
-      display:grid;
-      grid-template-columns:1.1fr 1.2fr .7fr .8fr;
-      gap:10px;
-      padding:9px 0;
-      border-top:1px solid #e5e7eb;
-      align-items:center;
-      font-size:14px;
-    }
-
-    .pts{
-      justify-self:end;
-      font-weight:950;
-      font-size:18px;
-    }
-
-    .ok{color:#15803d}
-    .bad{color:#dc2626}
-    .warn{color:#f97316}
-
-    .rules{
-      grid-template-columns:repeat(4,minmax(0,1fr));
-    }
-
-    .rule{
-      color:white;
-      border-radius:20px;
-      padding:18px;
-      background:linear-gradient(135deg,rgba(22,163,74,.95),rgba(2,6,23,.95));
-      border:1px solid rgba(255,255,255,.16);
-      box-shadow:0 12px 34px rgba(0,0,0,.22);
-    }
-
-    .rule b{
-      display:block;
-      font-size:28px;
-      margin-bottom:6px;
-    }
-
-    .error{
-      display:none;
-      margin-top:16px;
-      padding:14px;
-      border-radius:16px;
-      background:#fef2f2;
-      color:#991b1b;
-      border:1px solid #fecaca;
-      font-weight:700;
-    }
-
-    .loading{
-      color:white;
-      margin:20px 0;
-      font-weight:800;
-    }
-
-    @media(max-width:980px){
-      .kpis,.awards,.bracket,.rules,.two{grid-template-columns:1fr 1fr}
-    }
-
-    @media(max-width:680px){
-      .wrap{padding:14px}
-      .kpis,.awards,.bracket,.rules,.two{grid-template-columns:1fr}
-      .teams{font-size:15px}
-      .score{font-size:19px;min-width:62px}
-      th,td{font-size:12px;padding:9px 7px}
-      .pred-row{grid-template-columns:1fr;gap:3px}
-      .pts{justify-self:start}
-    }
-  </style>
-</head>
-
-<body>
-  <div class="wrap">
-    <section class="hero">
-  <h1>Polla 🍆 Mundialista ⚽</h1>
-  
-    <div class="toolbar">
-      <span class="badge" id="lastUpdate">Actualizando...</span>
-    </div>
-  
-    <div id="errorBox" class="error"></div>
-  </section>
-
-    <div id="loading" class="loading">Cargando datos - Leño maricón...</div>
-
-    <section class="grid kpis" id="kpis"></section>
-
-    <h2>💰 Premios</h2>
-    <section class="grid awards" id="awards"></section>
-
-    <section class="grid two">
-      <div>
-        <h2>🏆 Tabla de posiciones</h2>
-        <section class="card" id="ranking"></section>
-      </div>
-      <div>
-        <h2>🎯 Ranking de exactos</h2>
-        <section class="card" id="exactos"></section>
-      </div>
-    </section>
-
-    <h2>🧩 Llave del torneo</h2>
-    <section class="grid bracket" id="bracket"></section>
-
-    <h2>📅 Partidos y horarios</h2>
-    <section class="grid two" id="matches"></section>
-
-    <h2>🎯 Puntos por partido</h2>
-    <section class="detail-grid" id="details"></section>
-
-    <h2>📌 Reglas rápidas</h2>
-    <section class="grid rules">
-      <div class="rule"><b>5 pts</b>Marcador exacto + clasificado correcto.</div>
-      <div class="rule"><b>4 pts</b>Clasificado correcto + diferencia correcta.</div>
-      <div class="rule"><b>3 pts</b>Clasificado correcto.</div>
-      <div class="rule"><b>0 pts</b>Falló o no mandó pronóstico.</div>
-    </section>
-  </div>
-
-  <script>
-    const GOOGLE_SHEET_ID = "1oGnsg_GiF192_8JplZvYoTEgJoVGcGuytFaqqqz57JA";
-
-    const SHEETS = [
-      "CONFIG",
-      "PARTICIPANTES",
-      "EQUIPOS",
-      "PARTIDOS",
-      "RESULTADOS",
-      "PRONOSTICOS",
-      "BONOS",
-      "RESULTADOS_BONOS"
-    ];
-
-    const DEFAULT_CONFIG = {
-      nombre_polla: "Polla Mundialista Knockouts",
-      moneda: "USD",
-      aporte_por_participante: 10,
-      premio_consuelo_fijo: 1,
-      minimo_pronosticos_consuelo: 0.8,
-      puntos_exactos: 5,
-      puntos_diferencia: 4,
-      puntos_clasificado: 3,
-      bono_campeon: 20,
-      bono_subcampeon: 12,
-      bono_goleador: 10,
-      bono_semifinalista: 8,
-      premio_primero_pct: 0.55,
-      premio_segundo_pct: 0.25,
-      premio_tercero_pct: 0.12,
-      premio_exactos_pct: 0.08
+    const cleanup = () => {
+      delete window[callbackName];
+      if (script.parentNode) script.parentNode.removeChild(script);
+      clearTimeout(timer);
     };
 
-    const FALLBACK_EMOJIS = {
-      "Argentina":"🇦🇷","Brasil":"🇧🇷","Ecuador":"🇪🇨","México":"🇲🇽","Mexico":"🇲🇽",
-      "Canadá":"🇨🇦","Canada":"🇨🇦","España":"🇪🇸","Spain":"🇪🇸","Francia":"🇫🇷","France":"🇫🇷",
-      "Portugal":"🇵🇹","Alemania":"🇩🇪","Germany":"🇩🇪","Inglaterra":"🏴","England":"🏴",
-      "Estados Unidos":"🇺🇸","United States":"🇺🇸","Colombia":"🇨🇴","Uruguay":"🇺🇾",
-      "Japón":"🇯🇵","Japan":"🇯🇵","Marruecos":"🇲🇦","Morocco":"🇲🇦","Croacia":"🇭🇷","Croatia":"🇭🇷",
-      "Bélgica":"🇧🇪","Belgium":"🇧🇪","Suiza":"🇨🇭","Switzerland":"🇨🇭","Senegal":"🇸🇳",
-      "Ghana":"🇬🇭","Noruega":"🇳🇴","Norway":"🇳🇴","Suecia":"🇸🇪","Sweden":"🇸🇪",
-      "Australia":"🇦🇺","Egipto":"🇪🇬","Egypt":"🇪🇬","Paraguay":"🇵🇾","Austria":"🇦🇹",
-      "Argelia":"🇩🇿","Algeria":"🇩🇿","Sudáfrica":"🇿🇦","South Africa":"🇿🇦"
+    const timer = setTimeout(() => {
+      cleanup();
+      reject(new Error(`Tiempo agotado leyendo la hoja ${sheetName}`));
+    }, 12000);
+
+    window[callbackName] = function(json){
+      try{
+        const table = json.table;
+
+        const headers = table.cols.map((c, i) => {
+          return clean(c.label || c.id || `col_${i}`);
+        });
+
+        const rows = table.rows.map(r => {
+          const obj = {};
+          headers.forEach((h, i) => {
+            const cell = r.c[i];
+            obj[h] = cell ? (cell.f ?? cell.v ?? "") : "";
+          });
+          return obj;
+        });
+
+        cleanup();
+        resolve(rows.filter(row => Object.values(row).some(v => clean(v) !== "")));
+      }catch(e){
+        cleanup();
+        reject(e);
+      }
     };
 
-    function clean(v){
-      if(v === null || v === undefined) return "";
-      return String(v).trim();
-    }
+    script.onerror = () => {
+      cleanup();
+      reject(new Error(`No se pudo cargar la hoja ${sheetName}`));
+    };
 
-    function norm(v){
-      return clean(v)
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g,"")
-        .replace(/\s+/g," ");
-    }
+    script.src = url;
+    document.body.appendChild(script);
+  });
+}
+Eso debería corregir dos cosas:
 
-    function num(v){
-      if(v === null || v === undefined || v === "") return null;
-      const n = Number(String(v).replace(",","."));
-      return Number.isFinite(n) ? n : null;
-    }
+El HTML usará tu nuevo Google Sheet.
 
-    function money(v){
-      const n = Number(v || 0);
-      return "$" + n.toFixed(2);
-    }
+Evitamos el problema de fetch/CORS cuando abres el HTML localmente o desde algunos navegadores.
 
-    function pct(v){
-      return Math.round(Number(v || 0) * 100) + "%";
-    }
+Después guarda el archivo y vuelve a abrirlo en Chrome. Si todavía sale error, el siguiente paso es revisar que en Google Sheets esté así:
 
-    function statusClass(v){
-      const s = norm(v);
-      if(s.includes("final")) return "finalizado";
-      if(s.includes("suspend")) return "suspendido";
-      return "pendiente";
-    }
+Compartir → Cualquier persona con el enlace → Lector
+No hace falta que publiques toda la hoja todavía para esta prueba.
 
-    function isFinal(v){
-      return norm(v).includes("final");
-    }
 
-    function esc(s){
-      return clean(s).replace(/[&<>"']/g, m => ({
-        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
-      }[m]));
-    }
+parece que ya está como hago para publicar? github pages?
+
+Sí, GitHub Pages te sirve perfecto porque es gratis y tus amigos solo abrirían un link. Te dejo los pasos simples y también una opción más rápida por si no quieres tocar GitHub.
+
+Pensó durante 15s
+Sí, GitHub Pages es buena opción para esto. Te queda un link tipo:
+
+https://tuusuario.github.io/polla-mundialista/
+Pasos para publicar el HTML en GitHub Pages
+1. Crea un repositorio
+En GitHub:
+
+Entra a tu cuenta.
+
+Clic en New repository.
+
+Nombre sugerido:
+
+polla-mundialista
+Déjalo como Public.
+
+Clic en Create repository.
+
+Para lo más simple, usa repo público. GitHub Pages permite publicar un sitio desde una rama del repositorio, seleccionando la fuente en Settings → Pages. 
+
+2. Sube tu archivo HTML
+El archivo debe llamarse:
+
+index.html
+Esto es importante porque GitHub Pages busca un archivo principal en la raíz del sitio.
+
+En tu repo:
+
+Clic en Add file.
+
+Upload files.
+
+Sube tu index.html.
+
+Clic en Commit changes.
+
+3. Activa GitHub Pages
+Dentro del repo:
+
+Ve a Settings.
+
+En el menú izquierdo, entra a Pages.
+
+En Build and deployment, selecciona:
+
+Source: Deploy from a branch
+Branch: main
+Folder: / root
+Clic en Save.
+
+GitHub indica que para publicar desde una rama debes elegir Deploy from a branch, seleccionar la rama y opcionalmente la carpeta fuente. 
+
+4. Abre el link
+Después de guardar, GitHub te mostrará un link parecido a:
+
+https://tuusuario.github.io/polla-mundialista/
+Ese es el link que puedes mandar por WhatsApp.
+
+Importante para que funcione con tu Google Sheet
+Tu Google Sheet debe estar así:
+
+Compartir → Cualquier persona con el enlace → Lector
+Como el HTML lee la hoja desde el navegador, si la hoja no está accesible como lector, a tus amigos no les va a cargar.
+
+También recuerda que el HTML tiene adentro este ID:
+
+const GOOGLE_SHEET_ID = "1oGnsg_GiF192_8JplZvYoTEgJoVGcGuytFaqqqz57JA";
+Ese es el correcto para la hoja nueva.
+
+Ojo con privacidad
+Como el HTML necesita leer la Google Sheet, cualquier persona con el link del dashboard podría inspeccionar el código y encontrar el ID de la hoja. Para esta polla no pasa nada si solo hay nombres, pronósticos y resultados, pero no pongas teléfonos, correos ni datos sensibles.
+
+Mi recomendación: usa GitHub Pages y manda solo ese link al grupo. Luego tú solo actualizas la Google Sheet y el dashboard se actualiza al recargar la página.
+
+
+ya estaba funcionando, pero agregue a alguien mas en pronosticos y ya no salen los puntajes ocmo estaban
+
+Eso suele pasar por una de tres cosas: la persona nueva está en PRONOSTICOS pero no en PARTICIPANTES, cambió algún encabezado de columna, o quedó una fila/valor raro que rompe el match por nombre o partido. Voy a revisarlo con la lógica del HTML para decirte exactamente dónde tocar.
+
+Pensó durante 26s
+Sí, esto casi seguro pasó por esto:
+
+agregaste a alguien en PRONOSTICOS, pero el HTML arma el ranking desde la hoja PARTICIPANTES.
+Entonces, si la persona nueva no existe en PARTICIPANTES, el sistema puede ignorarla o no mostrarla bien.
+
+Tu archivo sí tiene las pestañas necesarias como PARTICIPANTES, PRONOSTICOS, RESULTADOS, etc. 
+
+Revisa primero esto
+En la hoja PARTICIPANTES, agrega también a la nueva persona:
+
+participante | aporte | activo
+NuevoNombre  | 10     | SI
+Luego en PRONOSTICOS, el nombre debe estar escrito igual:
+
+NuevoNombre
+No es lo mismo para el sistema:
+
+Gato
+gato 
+Gato.
+Gato 🐱
+Aunque el código normaliza bastante, mejor mantenerlo exacto.
+
+Revisa también estas columnas
+En PRONOSTICOS, los encabezados deben seguir exactamente así:
+
+participante
+id_partido
+goles_1_pred
+goles_2_pred
+clasifica_pred
+Y en RESULTADOS:
+
+id_partido
+goles_1_real
+goles_2_real
+clasifica_real
+estado
+Si sin querer moviste encabezados, insertaste una fila arriba o cambiaste un nombre de columna, el HTML deja de calcular bien.
+
+Para hacerlo más automático
+Te recomiendo cambiar una parte del código para que el HTML también detecte automáticamente participantes nuevos desde PRONOSTICOS, aunque no los hayas agregado todavía en PARTICIPANTES.
+
+Busca dentro del HTML esta parte:
+
+const participantes = data.PARTICIPANTES
+  .filter(r => clean(r.participante))
+  .filter(r => !["no","false","0","inactivo"].includes(norm(r.activo)))
+  .map(r => ({
+    nombre: clean(r.participante),
+    aporte: num(r.aporte) ?? Number(cfg.aporte_por_participante || 10)
+  }));
+Y reemplázala por esta:
+
+const participantesBase = data.PARTICIPANTES
+  .filter(r => clean(r.participante))
+  .filter(r => !["no","false","0","inactivo"].includes(norm(r.activo)))
+  .map(r => ({
+    nombre: clean(r.participante),
+    aporte: num(r.aporte) ?? Number(cfg.aporte_por_participante || 10)
+  }));
+
+const participantesMap = new Map();
+
+participantesBase.forEach(p => {
+  participantesMap.set(norm(p.nombre), p);
+});
+
+data.PRONOSTICOS.forEach(r => {
+  const nombre = clean(r.participante);
+  if (!nombre) return;
+
+  if (!participantesMap.has(norm(nombre))) {
+    participantesMap.set(norm(nombre), {
+      nombre,
+      aporte: Number(cfg.aporte_por_participante || 10)
+    });
+  }
+});
+
+const participantes = Array.from(participantesMap.values());
+Con eso, si mañana se suma alguien y solo lo cargas en PRONOSTICOS, el HTML igual lo mete al ranking automáticamente con aporte de $10.
+
+Qué haría yo ahora
+Primero agrega la nueva persona en PARTICIPANTES.
+Luego recarga el HTML con Ctrl + F5.
+
+Si vuelve a fallar, aplica el cambio de código de arriba y ya queda más resistente para nuevos amigos.
+
+
+cuanto tiempo se demorara entre que aumento un nuevo participante o partido y puedo refrescar el html?
+
+Normalmente debería verse casi al instante si el HTML lee la hoja directamente como está ahora; si dependes de “publicar en la web”, puede tardar más por caché. Te doy los tiempos prácticos y cómo forzar refresco.
+
+Pensó durante 6s
+Depende de cómo lo estás leyendo, pero para tu caso:
+
+Si usas el HTML que te pasé
+El HTML lee directamente la Google Sheet con el endpoint gviz. En la práctica debería actualizarse en:
+
+10 segundos a 1 minuto
+A veces Google o el navegador cachean un poco, así que puede tardar:
+
+hasta 2-5 minutos
+Para forzar actualización
+Después de editar la hoja:
+
+Espera unos segundos.
+
+En el HTML presiona:
+
+Ctrl + F5
+o abre el link en incógnito.
+
+También puedes agregar algo al final del link para evitar caché:
+
+?t=1
+Luego:
+
+?t=2
+Ejemplo:
+
+https://tuusuario.github.io/polla-mundialista/?t=2
+Eso obliga al navegador a cargar una versión fresca.
+
+Si publicaste la hoja con “Publicar en la web”
+Ahí puede tardar más. Google tiene la opción Automatically republish when changes are made, y oficialmente permite activar o desactivar esa republicación automática. 
+
+En muchos casos, la actualización publicada suele verse alrededor de:
+
+5 minutos
+Hay reportes de usuarios y documentación de terceros que mencionan rangos de 5 a 10 minutos para contenido publicado o embebido. 
+
+Mi recomendación
+Para la polla, maneja esta expectativa con tus amigos:
+
+Actualizo la hoja y en máximo 1-5 minutos deberían ver los cambios al refrescar el link.
+Para ti, cuando estés probando:
+
+Edita Google Sheets → espera 20-30 segundos → Ctrl + F5 en el HTML
+Si agregas un nuevo participante y no sale, revisa que también esté en PARTICIPANTES o usa el código que detecta automáticamente participantes desde PRONOSTICOS.
+
+
+el que esta publicado en github pages aparece con los datos peor no actuliaza el eltimo jugador que ingrese
+Cargando datos desde Google Sheets... eso asoma en el que ejecuto de manera local
+
+Esto apunta a dos problemas distintos: en GitHub sí carga pero está leyendo una versión cacheada o no está incluyendo automáticamente al nuevo participante; en local se queda cargando porque probablemente tienes una versión anterior del código o una hoja está fallando sin mostrar error. Te dejo el parche más seguro.
+
+Pensó durante 22s
+Sí, entonces hagamos dos arreglos:
+
+Que GitHub Pages no se quede con datos cacheados.
+
+Que si agregas alguien en PRONOSTICOS, también lo tome aunque no esté todavía en PARTICIPANTES.
+
+1. Primero revisa esto en la hoja
+Si agregaste un nuevo jugador, lo ideal es que esté en dos lugares:
+
+En PARTICIPANTES:
+
+participante | aporte | activo
+NuevoJugador | 10     | SI
+Y en PRONOSTICOS:
+
+participante | id_partido | goles_1_pred | goles_2_pred | clasifica_pred
+NuevoJugador | M73        | 2            | 1            | Canada
+Si solo está en PRONOSTICOS, puede que tu versión publicada todavía no lo tome.
+
+2. Cambia esta función fetchSheet
+Busca en tu HTML:
+
+function fetchSheet(sheetName){
+y reemplaza toda esa función por esta:
 
 function fetchSheet(sheetName){
   return new Promise((resolve, reject) => {
@@ -611,97 +410,21 @@ function fetchSheet(sheetName){
     document.body.appendChild(script);
   });
 }
+Ese cacheBust=${Date.now()} ayuda a que GitHub Pages no se quede leyendo una versión vieja.
 
-    async function loadData(){
-      const data = {};
-      await Promise.all(SHEETS.map(async s => {
-        try{
-          data[s] = await fetchSheet(s);
-        }catch(e){
-          data[s] = [];
-          console.warn(e);
-        }
-      }));
-      return data;
-    }
+3. Cambia la parte de participantes
+Dentro de la función calcScores, busca esto:
 
-    function configFromRows(rows){
-      const cfg = {...DEFAULT_CONFIG};
-      rows.forEach(r => {
-        const key = clean(r.clave || r.key || r.parametro);
-        const value = r.valor ?? r.value ?? "";
-        if(!key) return;
-        const n = num(value);
-        cfg[key] = n !== null && value !== "" ? n : value;
-      });
-      return cfg;
-    }
+const participantes = data.PARTICIPANTES
+  .filter(r => clean(r.participante))
+  .filter(r => !["no","false","0","inactivo"].includes(norm(r.activo)))
+  .map(r => ({
+    nombre: clean(r.participante),
+    aporte: num(r.aporte) ?? Number(cfg.aporte_por_participante || 10)
+  }));
+y reemplázalo por esto:
 
-    function buildEmojiMap(equipos){
-      const m = {...FALLBACK_EMOJIS};
-      equipos.forEach(r => {
-        const equipo = clean(r.equipo || r.Equipo || r.team);
-        const emoji = clean(r.emoji || r.Emoji || r.bandera);
-        if(equipo && emoji) m[equipo] = emoji;
-      });
-      return m;
-    }
-
-    function emojiOf(team, emojiMap){
-      if(!team) return "";
-      if(emojiMap[team]) return emojiMap[team];
-      const key = Object.keys(emojiMap).find(k => norm(k) === norm(team));
-      return key ? emojiMap[key] : "🏳️";
-    }
-
-    function loserOf(result, p){
-      const clasifica = clean(result.clasifica_real);
-      if(!clasifica) return clean(result.pierde_real);
-      const e1 = clean(result.equipo_1 || p?.equipo_1);
-      const e2 = clean(result.equipo_2 || p?.equipo_2);
-      if(norm(clasifica) === norm(e1)) return e2;
-      if(norm(clasifica) === norm(e2)) return e1;
-      return clean(result.pierde_real);
-    }
-
-    function resolveBracket(partidos, resultados, emojiMap){
-      const resMap = new Map(resultados.map(r => [clean(r.id_partido), r]));
-      const partMap = new Map(partidos.map(p => [clean(p.id_partido), p]));
-
-      function resolveSide(p, side){
-        const tipo = clean(p[`source_${side}_tipo`]);
-        const ref = clean(p[`source_${side}_partido`]);
-        const manual = clean(p[`equipo_${side}_manual`]);
-        const formula = clean(p[`equipo_${side}`]);
-
-        if(formula && !formula.startsWith("Ganador") && !formula.startsWith("Perdedor")) return formula;
-        if(tipo === "Manual") return manual || formula;
-        if(tipo === "Ganador"){
-          const r = resMap.get(ref);
-          return clean(r?.clasifica_real) || `Ganador ${ref}`;
-        }
-        if(tipo === "Perdedor"){
-          const r = resMap.get(ref);
-          const refPart = partMap.get(ref);
-          return loserOf(r || {}, refPart) || `Perdedor ${ref}`;
-        }
-        return formula || manual;
-      }
-
-      for(let i=0;i<5;i++){
-        partidos.forEach(p => {
-          p.equipo_1_resuelto = resolveSide(p, "1");
-          p.equipo_2_resuelto = resolveSide(p, "2");
-          p.emoji_1_resuelto = clean(p.emoji_1 || p.emoji_1_manual) || emojiOf(p.equipo_1_resuelto, emojiMap);
-          p.emoji_2_resuelto = clean(p.emoji_2 || p.emoji_2_manual) || emojiOf(p.equipo_2_resuelto, emojiMap);
-        });
-      }
-
-      return partidos;
-    }
-
-    function calcScores(data, cfg, emojiMap){
-      const participantesBase = data.PARTICIPANTES
+const participantesBase = data.PARTICIPANTES
   .filter(r => clean(r.participante))
   .filter(r => !["no","false","0","inactivo"].includes(norm(r.activo)))
   .map(r => ({
@@ -728,497 +451,302 @@ data.PRONOSTICOS.forEach(r => {
 });
 
 const participantes = Array.from(participantesMap.values());
+Con esto, si agregas a alguien nuevo solo en PRONOSTICOS, el dashboard igual lo mete al ranking.
 
-      const partidos = resolveBracket(data.PARTIDOS.map(r => ({...r})), data.RESULTADOS, emojiMap)
-        .filter(p => clean(p.id_partido));
+4. Publica el cambio en GitHub
+En GitHub:
 
-      const partMap = new Map(partidos.map(p => [clean(p.id_partido), p]));
-      const resMap = new Map(data.RESULTADOS.map(r => [clean(r.id_partido), r]));
-      const predMap = new Map();
+Abre tu repo.
 
-      data.PRONOSTICOS.forEach(p => {
-        const participante = clean(p.participante);
-        const id = clean(p.id_partido);
-        if(!participante || !id) return;
-        predMap.set(`${norm(participante)}|${id}`, p);
-      });
+Entra a index.html.
 
-      const stats = new Map();
-      participantes.forEach(p => {
-        stats.set(norm(p.nombre), {
-          participante:p.nombre,
-          aporte:p.aporte,
-          puntos_partidos:0,
-          puntos_bonos:0,
-          total:0,
-          exactos:0,
-          clasificados:0,
-          pronosticos_enviados:0,
-          posibles_pronosticos:partidos.length,
-          detalle:[]
-        });
-      });
+Clic en el lápiz de editar.
 
-      partidos.forEach(match => {
-        const id = clean(match.id_partido);
-        const r = resMap.get(id) || {};
-        const finalizado = isFinal(r.estado);
-        const g1r = num(r.goles_1_real);
-        const g2r = num(r.goles_2_real);
-        const clasificaReal = clean(r.clasifica_real);
+Pega los cambios.
 
-        participantes.forEach(part => {
-          const st = stats.get(norm(part.nombre));
-          const pred = predMap.get(`${norm(part.nombre)}|${id}`);
-          let puntos = 0;
-          let tipo = "Sin pronóstico";
-          let exacto = false;
-          let enviado = false;
+Clic en Commit changes.
 
-          if(pred && clean(pred.clasifica_pred)){
-            enviado = true;
-            st.pronosticos_enviados++;
-          }
+Después espera un minuto y abre el link así:
 
-          if(finalizado && pred && clasificaReal){
-            const g1p = num(pred.goles_1_pred);
-            const g2p = num(pred.goles_2_pred);
-            const clasificaPred = clean(pred.clasifica_pred);
+https://tuusuario.github.io/polla-mundialista/?v=2
+Si sigues editando, cambia el número:
 
-            if(g1p !== null && g2p !== null && clasificaPred){
-              const clasificadoOk = norm(clasificaPred) === norm(clasificaReal);
-              const marcadorExacto = g1p === g1r && g2p === g2r;
-              const difOk = (g1p - g2p) === (g1r - g2r);
+?v=3
+?v=4
+?v=5
+Eso fuerza al navegador a no usar caché.
 
-              if(clasificadoOk && marcadorExacto){
-                puntos = Number(cfg.puntos_exactos || 5);
-                tipo = "Exacto";
-                exacto = true;
-                st.exactos++;
-                st.clasificados++;
-              }else if(clasificadoOk && difOk){
-                puntos = Number(cfg.puntos_diferencia || 4);
-                tipo = "Clasificado + diferencia";
-                st.clasificados++;
-              }else if(clasificadoOk){
-                puntos = Number(cfg.puntos_clasificado || 3);
-                tipo = "Clasificado";
-                st.clasificados++;
-              }else{
-                puntos = 0;
-                tipo = "Falló";
-              }
-            }
-          }else if(!finalizado && enviado){
-            tipo = "Pendiente";
-          }
+Sobre el HTML local que se queda en “Cargando datos…”
+Eso normalmente pasa porque tu archivo local todavía tiene una versión anterior o alguna función quedó mal pegada.
 
-          st.puntos_partidos += puntos;
-          st.detalle.push({
-            id,
-            fase: clean(match.fase),
-            equipo_1: match.equipo_1_resuelto,
-            equipo_2: match.equipo_2_resuelto,
-            emoji_1: match.emoji_1_resuelto,
-            emoji_2: match.emoji_2_resuelto,
-            goles_1_real:g1r,
-            goles_2_real:g2r,
-            clasifica_real:clasificaReal,
-            goles_1_pred: pred ? clean(pred.goles_1_pred) : "",
-            goles_2_pred: pred ? clean(pred.goles_2_pred) : "",
-            clasifica_pred: pred ? clean(pred.clasifica_pred) : "",
-            puntos,
-            tipo,
-            exacto
-          });
-        });
-      });
+Para probar bien, usa mejor el link de GitHub Pages.
+Si quieres probar local, abre el archivo y presiona:
 
-      const realBonuses = {};
-      data.RESULTADOS_BONOS.forEach(r => {
-        const bono = norm(r.bono);
-        const valor = clean(r.valor_real);
-        if(bono && valor) realBonuses[bono] = valor;
-      });
+Ctrl + Shift + R
+o abre en incógnito.
 
-      const r104 = resMap.get("M104") || {};
-      const m101 = partMap.get("M101") || {};
-      const m102 = partMap.get("M102") || {};
+Pero para tus amigos, lo importante es que funcione en GitHub Pages. Ahí, con esos dos cambios, debería actualizar los nuevos jugadores y puntajes al refrescar.
 
-      realBonuses.campeon = realBonuses.campeon || clean(r104.clasifica_real);
-      realBonuses.subcampeon = realBonuses.subcampeon || loserOf(r104, partMap.get("M104"));
-      realBonuses.semifinalista_1 = realBonuses.semifinalista_1 || clean(m101.equipo_1_resuelto);
-      realBonuses.semifinalista_2 = realBonuses.semifinalista_2 || clean(m101.equipo_2_resuelto);
-      realBonuses.semifinalista_3 = realBonuses.semifinalista_3 || clean(m102.equipo_1_resuelto);
-      realBonuses.semifinalista_4 = realBonuses.semifinalista_4 || clean(m102.equipo_2_resuelto);
 
-      const semifinalistasReales = [
-        realBonuses.semifinalista_1,
-        realBonuses.semifinalista_2,
-        realBonuses.semifinalista_3,
-        realBonuses.semifinalista_4
-      ].filter(Boolean).map(norm);
 
-      data.BONOS.forEach(b => {
-        const st = stats.get(norm(b.participante));
-        if(!st) return;
+Pegado text(41).txt
+Documento
+cambie... esta bien?
 
-        let pts = 0;
-        if(realBonuses.campeon && norm(b.campeon) === norm(realBonuses.campeon)) pts += Number(cfg.bono_campeon || 20);
-        if(realBonuses.subcampeon && norm(b.subcampeon) === norm(realBonuses.subcampeon)) pts += Number(cfg.bono_subcampeon || 12);
-        if(realBonuses.goleador && norm(b.goleador) === norm(realBonuses.goleador)) pts += Number(cfg.bono_goleador || 10);
 
-        ["semifinalista_1","semifinalista_2","semifinalista_3","semifinalista_4"].forEach(k => {
-          const pred = norm(b[k]);
-          if(pred && semifinalistasReales.includes(pred)) pts += Number(cfg.bono_semifinalista || 8);
-        });
+Pensó durante 35s
+Casi está bien, pero todavía te faltan dos cambios importantes.
 
-        st.puntos_bonos = pts;
-      });
+Lo que sí quedó bien:
 
-      const ranking = Array.from(stats.values()).map(st => {
-        st.total = st.puntos_partidos + st.puntos_bonos;
-        return st;
-      }).sort((a,b) =>
-        b.total - a.total ||
-        b.exactos - a.exactos ||
-        b.clasificados - a.clasificados ||
-        a.participante.localeCompare(b.participante)
-      );
+El GOOGLE_SHEET_ID ya apunta al nuevo Google Sheet.
 
-      return {participantes, partidos, resultados:data.RESULTADOS, ranking, stats, realBonuses};
-    }
+La función fetchSheet() ya tiene cacheBust, eso ayuda a evitar caché.
 
-    function calcAwards(ranking, participantes, cfg){
-      const pozo = participantes.reduce((s,p)=>s + Number(p.aporte || 0),0);
-      const consuelo = Number(cfg.premio_consuelo_fijo || 1);
-      const repartible = Math.max(0, pozo - consuelo);
+El diseño carga normal.
 
-      const exactLeader = [...ranking].sort((a,b) =>
-        b.exactos - a.exactos ||
-        b.total - a.total ||
-        a.participante.localeCompare(b.participante)
-      )[0];
+Pero hay dos problemas:
 
-      const minRatio = Number(cfg.minimo_pronosticos_consuelo || 0.8);
-      const eligible = ranking.filter(r => {
-        const ratio = r.posibles_pronosticos ? r.pronosticos_enviados / r.posibles_pronosticos : 0;
-        return ratio >= minRatio;
-      });
+1. Quitaste lastUpdate y errorBox
+En tu HTML ya no existe este elemento:
 
-      const consueloLeader = (eligible.length ? eligible : ranking).slice().sort((a,b) =>
-        a.total - b.total ||
-        a.exactos - b.exactos ||
-        a.clasificados - b.clasificados ||
-        a.participante.localeCompare(b.participante)
-      )[0];
+<span class="badge" id="lastUpdate">Actualizando...</span>
+Pero al final del código todavía haces esto:
 
-      return {
-        pozo,
-        consuelo,
-        repartible,
-        primero: repartible * Number(cfg.premio_primero_pct || .55),
-        segundo: repartible * Number(cfg.premio_segundo_pct || .25),
-        tercero: repartible * Number(cfg.premio_tercero_pct || .12),
-        exactos: repartible * Number(cfg.premio_exactos_pct || .08),
-        exactLeader,
-        consueloLeader
-      };
-    }
+document.getElementById("lastUpdate").textContent = "Actualizado: " + new Date().toLocaleString("es-EC");
+Eso puede romper el script y dejarlo pegado en “Cargando datos…”. También quitaste el errorBox, pero la función showError() todavía intenta usarlo. 
 
-    function renderKPIs(model, awards){
-      const jugados = model.partidos.filter(p => {
-        const r = model.resultados.find(x => clean(x.id_partido) === clean(p.id_partido));
-        return r && isFinal(r.estado);
-      }).length;
+ 
 
-      const lider = model.ranking[0]?.participante || "-";
-      const html = [
-        ["👑 Líder", lider],
-        ["👥 Participantes", model.participantes.length],
-        ["⚽ Partidos jugados", `${jugados}/${model.partidos.length}`],
-        ["💰 Pozo", money(awards.pozo)]
-      ].map(([label,value]) => `
-        <div class="card">
-          <div class="label">${label}</div>
-          <div class="value">${value}</div>
-        </div>
-      `).join("");
 
-      document.getElementById("kpis").innerHTML = html;
-    }
+Agrega esto dentro del <section class="hero">, debajo del <h1>:
 
-    function renderAwards(awards){
-      const cards = [
-        ["🥇 1er lugar", awards.primero, ""],
-        ["🥈 2do lugar", awards.segundo, ""],
-        ["🥉 3er lugar", awards.tercero, ""],
-        ["🎯 Más exactos", awards.exactos, awards.exactLeader ? awards.exactLeader.participante : ""],
-        ["🪦 Consuelo", awards.consuelo, awards.consueloLeader ? awards.consueloLeader.participante : ""]
-      ];
+<p>Dashboard de eliminatorias: ranking, horarios, resultados, puntos por partido, premios y bracket automático.</p>
 
-      document.getElementById("awards").innerHTML = cards.map(([label,value,who]) => `
-        <div class="card">
-          <div class="label">${label}</div>
-          <div class="value">${money(value)}</div>
-          ${who ? `<div class="muted small">Actual: ${esc(who)}</div>` : ""}
-        </div>
-      `).join("");
-    }
+<div class="toolbar">
+  <span class="badge">⚽ Knockouts</span>
+  <span class="badge">🇪🇨 Hora Ecuador</span>
+  <span class="badge">💰 Premios automáticos</span>
+  <span class="badge" id="lastUpdate">Actualizando...</span>
+</div>
 
-    function renderRanking(ranking){
-      let html = `
-        <table>
-          <thead>
-            <tr>
-              <th>Pos</th>
-              <th>Participante</th>
-              <th class="right">Partidos</th>
-              <th class="right">Bonos</th>
-              <th class="right">Exactos</th>
-              <th class="right">Total</th>
-            </tr>
-          </thead>
-          <tbody>
-      `;
+<div id="errorBox" class="error"></div>
+Tu parte debería quedar así:
 
-      ranking.forEach((r,i) => {
-        const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1;
-        const cls = i === 0 ? "r1" : i === 1 ? "r2" : i === 2 ? "r3" : "";
-        html += `
-          <tr>
-            <td><span class="rank ${cls}">${medal}</span></td>
-            <td class="strong">${esc(r.participante)}</td>
-            <td class="right">${r.puntos_partidos}</td>
-            <td class="right">${r.puntos_bonos}</td>
-            <td class="right">${r.exactos}</td>
-            <td class="right strong">${r.total}</td>
-          </tr>
-        `;
-      });
+<section class="hero">
+  <h1>Polla 🍆 Mundialista ⚽</h1>
 
-      html += "</tbody></table>";
-      document.getElementById("ranking").innerHTML = html;
-    }
+  <p>Dashboard de eliminatorias: ranking, horarios, resultados, puntos por partido, premios y bracket automático.</p>
 
-    function renderExactos(ranking){
-      const rows = [...ranking].sort((a,b) =>
-        b.exactos - a.exactos ||
-        b.total - a.total ||
-        a.participante.localeCompare(b.participante)
-      );
+  <div class="toolbar">
+    <span class="badge">⚽ Knockouts</span>
+    <span class="badge">🇪🇨 Hora Ecuador</span>
+    <span class="badge">💰 Premios automáticos</span>
+    <span class="badge" id="lastUpdate">Actualizando...</span>
+  </div>
 
-      let html = `
-        <table>
-          <thead>
-            <tr>
-              <th>Participante</th>
-              <th class="right">Exactos</th>
-              <th class="right">Total</th>
-            </tr>
-          </thead>
-          <tbody>
-      `;
+  <div id="errorBox" class="error"></div>
+</section>
+2. No cambiaste la lógica de participantes
+Esta parte sigue igual que antes:
 
-      rows.forEach(r => {
-        html += `
-          <tr>
-            <td class="strong">${esc(r.participante)}</td>
-            <td class="right">🎯 ${r.exactos}</td>
-            <td class="right">${r.total}</td>
-          </tr>
-        `;
-      });
+const participantes = data.PARTICIPANTES
+Entonces si agregas alguien solo en PRONOSTICOS, el dashboard todavía puede no tomarlo en el ranking. 
 
-      html += "</tbody></table>";
-      document.getElementById("exactos").innerHTML = html;
-    }
 
-    function roundName(fase){
-      const f = norm(fase);
-      if(f.includes("32")) return "Ronda de 32";
-      if(f.includes("16") || f.includes("octavos")) return "Octavos";
-      if(f.includes("cuarto")) return "Cuartos";
-      if(f.includes("semi")) return "Semis";
-      if(f.includes("final")) return "Final";
-      return clean(fase) || "Partidos";
-    }
+Dentro de function calcScores, reemplaza este bloque:
 
-    function renderBracket(model){
-      const order = ["Ronda de 32","Octavos","Cuartos","Semis","Final"];
-      const groups = {};
-      model.partidos.forEach(p => {
-        const name = roundName(p.fase);
-        if(!groups[name]) groups[name] = [];
-        groups[name].push(p);
-      });
+const participantes = data.PARTICIPANTES
+  .filter(r => clean(r.participante))
+  .filter(r => !["no","false","0","inactivo"].includes(norm(r.activo)))
+  .map(r => ({
+    nombre: clean(r.participante),
+    aporte: num(r.aporte) ?? Number(cfg.aporte_por_participante || 10)
+  }));
+por este:
 
-      document.getElementById("bracket").innerHTML = order
-        .filter(r => groups[r])
-        .map(r => `
-          <div class="round">
-            <h3>${r}</h3>
-            ${groups[r].map(p => {
-              const res = model.resultados.find(x => clean(x.id_partido) === clean(p.id_partido)) || {};
-              const final = isFinal(res.estado);
-              const win = clean(res.clasifica_real);
-              const e1 = clean(p.equipo_1_resuelto);
-              const e2 = clean(p.equipo_2_resuelto);
-              const c1 = final && norm(win) === norm(e1) ? "winner" : final ? "loser" : "";
-              const c2 = final && norm(win) === norm(e2) ? "winner" : final ? "loser" : "";
-              const score = final ? `${clean(res.goles_1_real)} - ${clean(res.goles_2_real)}` : "vs";
+const participantesBase = data.PARTICIPANTES
+  .filter(r => clean(r.participante))
+  .filter(r => !["no","false","0","inactivo"].includes(norm(r.activo)))
+  .map(r => ({
+    nombre: clean(r.participante),
+    aporte: num(r.aporte) ?? Number(cfg.aporte_por_participante || 10)
+  }));
 
-              return `
-                <div class="mini-match">
-                  <div class="small muted">${esc(p.id_partido)} · ${esc(p.fecha)} · ${esc(p.hora_ecuador)}</div>
-                  <div class="mini-line ${c1}">
-                    <span>${esc(p.emoji_1_resuelto)} ${esc(e1)}</span>
-                    <span>${final ? esc(res.goles_1_real) : ""}</span>
-                  </div>
-                  <div class="mini-line ${c2}">
-                    <span>${esc(p.emoji_2_resuelto)} ${esc(e2)}</span>
-                    <span>${final ? esc(res.goles_2_real) : ""}</span>
-                  </div>
-                  <div class="small muted">${final ? "Clasifica: " + esc(win) : score}</div>
-                </div>
-              `;
-            }).join("")}
-          </div>
-        `).join("");
-    }
+const participantesMap = new Map();
 
-    function renderMatches(model){
-      const sorted = [...model.partidos].sort((a,b) => Number(a.orden || 999) - Number(b.orden || 999));
-      document.getElementById("matches").innerHTML = sorted.map(p => {
-        const r = model.resultados.find(x => clean(x.id_partido) === clean(p.id_partido)) || {};
-        const final = isFinal(r.estado);
-        const estado = clean(r.estado || p.estado || "Pendiente");
-        const score = final ? `${clean(r.goles_1_real)} - ${clean(r.goles_2_real)}` : "vs";
+participantesBase.forEach(p => {
+  participantesMap.set(norm(p.nombre), p);
+});
 
-        return `
-          <div class="card match-card">
-            <div class="meta">
-              <span class="pill">${esc(p.id_partido)}</span>
-              <span class="pill">${esc(roundName(p.fase))}</span>
-              <span class="status ${statusClass(estado)}">${esc(estado)}</span>
-            </div>
-            <div class="teams">
-              <div class="team">${esc(p.emoji_1_resuelto)} ${esc(p.equipo_1_resuelto)}</div>
-              <div class="score">${esc(score)}</div>
-              <div class="team">${esc(p.equipo_2_resuelto)} ${esc(p.emoji_2_resuelto)}</div>
-            </div>
-            <div class="meta">
-              <span>📅 ${esc(p.fecha)}</span>
-              <span>🕒 ${esc(p.hora_ecuador)}</span>
-              ${final ? `<span>✅ Clasifica: <b>${esc(r.clasifica_real)}</b></span>` : ""}
-            </div>
-          </div>
-        `;
-      }).join("");
-    }
+data.PRONOSTICOS.forEach(r => {
+  const nombre = clean(r.participante);
+  if (!nombre) return;
 
-    function renderDetails(model){
-      const completed = model.partidos.filter(p => {
-        const r = model.resultados.find(x => clean(x.id_partido) === clean(p.id_partido));
-        return r && isFinal(r.estado);
-      });
+  if (!participantesMap.has(norm(nombre))) {
+    participantesMap.set(norm(nombre), {
+      nombre,
+      aporte: Number(cfg.aporte_por_participante || 10)
+    });
+  }
+});
 
-      if(!completed.length){
-        document.getElementById("details").innerHTML = `
-          <div class="card">Todavía no hay partidos finalizados. Cuando cargues resultados en la hoja RESULTADOS aparecerán aquí los puntos por partido.</div>
-        `;
-        return;
-      }
+const participantes = Array.from(participantesMap.values());
+3. Detalle menor
+Veo que pusiste este texto:
 
-      document.getElementById("details").innerHTML = completed.map(p => {
-        const r = model.resultados.find(x => clean(x.id_partido) === clean(p.id_partido)) || {};
-        const rows = model.ranking
-          .map(st => st.detalle.find(d => d.id === clean(p.id_partido)))
-          .filter(Boolean)
-          .sort((a,b) => b.puntos - a.puntos || a.clasifica_pred.localeCompare(b.clasifica_pred));
+Cargando datos - Leño maricón...
+Funciona técnicamente, pero si el link lo van a abrir todos, yo lo cambiaría por algo más neutro o chistoso sin que se vea tan fuerte:
 
-        return `
-          <div class="prediction-card">
-            <h3>${esc(p.emoji_1_resuelto)} ${esc(p.equipo_1_resuelto)} ${esc(r.goles_1_real)} - ${esc(r.goles_2_real)} ${esc(p.equipo_2_resuelto)} ${esc(p.emoji_2_resuelto)}</h3>
-            <div class="meta">
-              <span class="pill">${esc(p.id_partido)}</span>
-              <span>✅ Clasifica: <b>${esc(r.clasifica_real)}</b></span>
-            </div>
-            <div style="margin-top:12px">
-              ${rows.map(d => {
-                const icon = d.puntos >= 5 ? "🎯" : d.puntos > 0 ? "✅" : "❌";
-                const cls = d.puntos >= 5 ? "ok" : d.puntos > 0 ? "ok" : "bad";
-                const pred = d.clasifica_pred
-                  ? `${esc(d.goles_1_pred)} - ${esc(d.goles_2_pred)} · clasifica ${esc(d.clasifica_pred)}`
-                  : "No envió";
+<div id="loading" class="loading">Cargando datos de la polla...</div>
+Resumen
+Tu cambio no está mal, pero todavía no está completo.
 
-                return `
-                  <div class="pred-row">
-                    <div class="strong">${icon} ${esc(model.ranking.find(x => x.detalle.includes(d))?.participante || "")}</div>
-                    <div>${pred}</div>
-                    <div class="${cls}">${esc(d.tipo)}</div>
-                    <div class="pts">${d.puntos} pts</div>
-                  </div>
-                `;
-              }).join("")}
-            </div>
-          </div>
-        `;
-      }).join("");
-    }
+Haz estos dos arreglos:
 
-    function render(model, cfg){
-      const awards = calcAwards(model.ranking, model.participantes, cfg);
+1. Vuelve a agregar lastUpdate y errorBox en el hero.
+2. Reemplaza el bloque de participantes dentro de calcScores.
+Después haces commit en GitHub y pruebas con:
 
-      renderKPIs(model, awards);
-      renderAwards(awards);
-      renderRanking(model.ranking);
-      renderExactos(model.ranking);
-      renderBracket(model);
-      renderMatches(model);
-      renderDetails(model);
+https://tuusuario.github.io/polla-mundialista/?v=10
 
-      document.getElementById("loading").style.display = "none";
-      document.getElementById("lastUpdate").textContent = "Actualizado: " + new Date().toLocaleString("es-EC");
-    }
+refresque pero sigue sin aparecer el ultimo usuario que agregue en el sheet
 
-    function showError(msg){
-      const box = document.getElementById("errorBox");
-      box.style.display = "block";
-      box.innerHTML = msg;
-      document.getElementById("loading").style.display = "none";
-    }
+Pensó durante 17s
+El cambio todavía no quedó aplicado. En el código que me mandaste, dentro de calcScores() sigue esta lógica:
 
-    async function main(){
-      try{
-        const data = await loadData();
-        const cfg = configFromRows(data.CONFIG || []);
-        const emojiMap = buildEmojiMap(data.EQUIPOS || []);
-        const model = calcScores(data, cfg, emojiMap);
+const participantes = data.PARTICIPANTES
+O sea: el dashboard solo arma el ranking desde la hoja PARTICIPANTES, no desde PRONOSTICOS. Por eso el último usuario no aparece si lo agregaste solo en pronósticos o si no quedó bien en PARTICIPANTES. 
 
-        if(!model.participantes.length){
-          showError(`
-            No pude leer participantes. Revisa que la hoja tenga una pestaña llamada <b>PARTICIPANTES</b>
-            y que el archivo esté compartido como lector.
-          `);
-          return;
-        }
 
-        render(model, cfg);
-      }catch(e){
-        console.error(e);
-        showError(`
-          No pude cargar la Google Sheet.<br><br>
-          Revisa esto:<br>
-          1. Compartir → Cualquier persona con enlace → Lector.<br>
-          2. Si tu archivo sigue siendo Excel, ve a Archivo → Guardar como Hojas de cálculo de Google.<br>
-          3. Verifica que existan las hojas: CONFIG, PARTICIPANTES, EQUIPOS, PARTIDOS, RESULTADOS, PRONOSTICOS, BONOS y RESULTADOS_BONOS.<br><br>
-          Error: ${esc(e.message)}
-        `);
-      }
-    }
+Haz esto:
 
-    main();
-  </script>
-</body>
-</html>
+Reemplaza este bloque
+Busca dentro de function calcScores esta parte:
+
+const participantes = data.PARTICIPANTES
+  .filter(r => clean(r.participante))
+  .filter(r => !["no","false","0","inactivo"].includes(norm(r.activo)))
+  .map(r => ({
+    nombre: clean(r.participante),
+    aporte: num(r.aporte) ?? Number(cfg.aporte_por_participante || 10)
+  }));
+Y reemplázala por esta:
+
+const participantesBase = data.PARTICIPANTES
+  .filter(r => clean(r.participante))
+  .filter(r => !["no","false","0","inactivo"].includes(norm(r.activo)))
+  .map(r => ({
+    nombre: clean(r.participante),
+    aporte: num(r.aporte) ?? Number(cfg.aporte_por_participante || 10)
+  }));
+
+const participantesMap = new Map();
+
+participantesBase.forEach(p => {
+  participantesMap.set(norm(p.nombre), p);
+});
+
+data.PRONOSTICOS.forEach(r => {
+  const nombre = clean(r.participante);
+  if (!nombre) return;
+
+  if (!participantesMap.has(norm(nombre))) {
+    participantesMap.set(norm(nombre), {
+      nombre,
+      aporte: Number(cfg.aporte_por_participante || 10)
+    });
+  }
+});
+
+const participantes = Array.from(participantesMap.values());
+Con eso, el HTML tomará participantes desde:
+
+PARTICIPANTES
++
+cualquier nombre nuevo que aparezca en PRONOSTICOS
+Luego haz esto en GitHub
+Guarda el cambio en index.html.
+
+Haz Commit changes.
+
+Abre el dashboard con un número nuevo al final:
+
+https://tuusuario.github.io/polla-mundialista/?v=20
+Si ya abriste con ?v=20, usa:
+
+?v=21
+Revisión rápida en Sheets
+Asegúrate también de que el nuevo jugador tenga el nombre en la columna exacta:
+
+participante
+en PRONOSTICOS.
+
+Y que su id_partido sea igual al de PARTIDOS, por ejemplo:
+
+M73
+M74
+M75
+No debe ser:
+
+73
+m73
+M73 
+Partido 73
+Con ese reemplazo debería aparecer aunque no lo hayas agregado manualmente en PARTICIPANTES.
+
+
+<!DOCTYPE html>
+
+<html lang="es"> <head> <meta charset="UTF-8" /> <meta name="viewport" content="width=device-width, initial-scale=1.0" /> <title>Polla 🍆 Mundialista ⚽</title>
+
+<style> :root{ --green:#16a34a; --dark:#07111f; --blue:#123c69; --gold:#facc15; --card:#ffffff; --muted:#64748b; --line:#e5e7eb; --text:#0f172a; --red:#dc2626; --orange:#f97316; } *{box-sizing:border-box} body{ margin:0; font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif; color:var(--text); background: radial-gradient(circle at top left,rgba(34,197,94,.35),transparent 28%), radial-gradient(circle at top right,rgba(250,204,21,.25),transparent 24%), linear-gradient(135deg,#052e16,#0f172a 48%,#111827); min-height:100vh; } body:before{ content:""; position:fixed; inset:0; pointer-events:none; opacity:.12; background-image: linear-gradient(90deg,rgba(255,255,255,.18) 1px,transparent 1px), linear-gradient(rgba(255,255,255,.18) 1px,transparent 1px); background-size:80px 80px; mask-image:linear-gradient(to bottom,black,transparent 85%); } .wrap{ max-width:1260px; margin:0 auto; padding:24px; position:relative; z-index:1; } .hero{ position:relative; overflow:hidden; border-radius:30px; padding:32px; color:white; background: linear-gradient(135deg,rgba(22,163,74,.96),rgba(15,23,42,.98)), url("https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?auto=format&fit=crop&w=1600&q=70"); background-size:cover; background-position:center; box-shadow:0 24px 70px rgba(0,0,0,.35); border:1px solid rgba(255,255,255,.15); } .hero:after{ content:"⚽🍆"; position:absolute; right:28px; top:10px; font-size:110px; opacity:.16; transform:rotate(-12deg); } .hero h1{ margin:0; font-size:clamp(32px,5vw,58px); line-height:.95; letter-spacing:-1px; } .hero p{ margin:12px 0 0; max-width:760px; color:#e2e8f0; font-size:16px; } .toolbar{ display:flex; gap:12px; flex-wrap:wrap; margin-top:20px; } .badge{ display:inline-flex; align-items:center; gap:8px; padding:9px 13px; border-radius:999px; font-weight:800; background:rgba(255,255,255,.16); border:1px solid rgba(255,255,255,.22); backdrop-filter:blur(8px); } .grid{ display:grid; gap:16px; } .kpis{ grid-template-columns:repeat(4,minmax(0,1fr)); margin-top:18px; } .awards{ grid-template-columns:repeat(5,minmax(0,1fr)); margin-top:16px; } .two{ grid-template-columns:1.05fr .95fr; align-items:start; } .card{ background:rgba(255,255,255,.96); border:1px solid var(--line); border-radius:22px; padding:18px; box-shadow:0 14px 35px rgba(15,23,42,.14); backdrop-filter:blur(10px); } .label{ font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; font-weight:900; } .value{ margin-top:6px; font-size:30px; font-weight:950; letter-spacing:-.5px; } h2{ color:white; margin:30px 0 12px; font-size:24px; letter-spacing:-.4px; } h3{ margin:0 0 12px; } table{ width:100%; border-collapse:collapse; overflow:hidden; border-radius:16px; } th,td{ padding:11px 10px; border-bottom:1px solid var(--line); text-align:left; font-size:14px; vertical-align:middle; } th{ background:#f8fafc; color:#334155; font-size:12px; text-transform:uppercase; letter-spacing:.06em; font-weight:900; } tr:last-child td{border-bottom:0} .right{text-align:right} .center{text-align:center} .muted{color:var(--muted)} .small{font-size:12px} .strong{font-weight:900} .rank{ display:inline-flex; min-width:36px; justify-content:center; padding:5px 9px; border-radius:999px; background:#e2e8f0; font-weight:950; } .r1{background:#fef3c7;color:#92400e} .r2{background:#e2e8f0;color:#334155} .r3{background:#ffedd5;color:#9a3412} .status{ display:inline-flex; padding:5px 9px; border-radius:999px; font-size:12px; font-weight:900; background:#fef3c7; color:#92400e; } .status.finalizado{ background:#dcfce7; color:#166534; } .status.suspendido{ background:#fee2e2; color:#991b1b; } .pill{ display:inline-flex; align-items:center; gap:6px; padding:5px 10px; border-radius:999px; background:#eef2ff; color:#3730a3; font-weight:850; font-size:12px; white-space:nowrap; } .match-card{ display:flex; flex-direction:column; gap:10px; border-left:6px solid var(--green); } .teams{ display:flex; align-items:center; justify-content:space-between; gap:12px; font-size:18px; font-weight:950; } .team{ flex:1; } .team:last-child{ text-align:right; } .score{ min-width:82px; text-align:center; font-size:24px; font-weight:950; color:#0f172a; background:#f1f5f9; border-radius:16px; padding:8px 10px; } .meta{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; color:var(--muted); font-size:13px; } .bracket{ grid-template-columns:repeat(5,minmax(0,1fr)); align-items:start; } .round h3{ color:#fff; background:linear-gradient(135deg,#16a34a,#14532d); border-radius:16px; padding:12px; text-align:center; margin-bottom:12px; box-shadow:0 10px 25px rgba(0,0,0,.16); } .mini-match{ background:rgba(255,255,255,.96); border:1px solid var(--line); border-radius:18px; padding:12px; margin-bottom:10px; box-shadow:0 10px 28px rgba(15,23,42,.12); } .mini-line{ display:flex; justify-content:space-between; gap:8px; padding:5px 0; font-weight:850; } .winner{ color:#15803d; } .loser{ color:#94a3b8; } .detail-grid{ display:grid; gap:14px; } .prediction-card{ background:rgba(255,255,255,.96); border:1px solid var(--line); border-radius:22px; padding:16px; box-shadow:0 12px 30px rgba(15,23,42,.12); } .pred-row{ display:grid; grid-template-columns:1.1fr 1.2fr .7fr .8fr; gap:10px; padding:9px 0; border-top:1px solid #e5e7eb; align-items:center; font-size:14px; } .pts{ justify-self:end; font-weight:950; font-size:18px; } .ok{color:#15803d} .bad{color:#dc2626} .warn{color:#f97316} .rules{ grid-template-columns:repeat(4,minmax(0,1fr)); } .rule{ color:white; border-radius:20px; padding:18px; background:linear-gradient(135deg,rgba(22,163,74,.95),rgba(2,6,23,.95)); border:1px solid rgba(255,255,255,.16); box-shadow:0 12px 34px rgba(0,0,0,.22); } .rule b{ display:block; font-size:28px; margin-bottom:6px; } .error{ display:none; margin-top:16px; padding:14px; border-radius:16px; background:#fef2f2; color:#991b1b; border:1px solid #fecaca; font-weight:700; } .loading{ color:white; margin:20px 0; font-weight:800; } @media(max-width:980px){ .kpis,.awards,.bracket,.rules,.two{grid-template-columns:1fr 1fr} } @media(max-width:680px){ .wrap{padding:14px} .kpis,.awards,.bracket,.rules,.two{grid-template-columns:1fr} .teams{font-size:15px} .score{font-size:19px;min-width:62px} th,td{font-size:12px;padding:9px 7px} .pred-row{grid-template-columns:1fr;gap:3px} .pts{justify-self:start} } </style>
+
+</head>
+
+<body> <div class="wrap"> <section class="hero"> <h1>Polla 🍆 Mundialista ⚽</h1>
+
+</section>
+
+<div id="loading" class="loading">Cargando datos - Leño maricón...</div>
+
+<section class="grid kpis" id="kpis"></section>
+
+<h2>💰 Premios</h2>
+<section class="grid awards" id="awards"></section>
+
+<section class="grid two">
+  <div>
+    <h2>🏆 Tabla de posiciones</h2>
+    <section class="card" id="ranking"></section>
+  </div>
+  <div>
+    <h2>🎯 Ranking de exactos</h2>
+    <section class="card" id="exactos"></section>
+  </div>
+</section>
+
+<h2>🧩 Llave del torneo</h2>
+<section class="grid bracket" id="bracket"></section>
+
+<h2>📅 Partidos y horarios</h2>
+<section class="grid two" id="matches"></section>
+
+<h2>🎯 Puntos por partido</h2>
+<section class="detail-grid" id="details"></section>
+
+<h2>📌 Reglas rápidas</h2>
+<section class="grid rules">
+  <div class="rule"><b>5 pts</b>Marcador exacto + clasificado correcto.</div>
+  <div class="rule"><b>4 pts</b>Clasificado correcto + diferencia correcta.</div>
+  <div class="rule"><b>3 pts</b>Clasificado correcto.</div>
+  <div class="rule"><b>0 pts</b>Falló o no mandó pronóstico.</div>
+</section>
+</div>
+
+<script> const GOOGLE_SHEET_ID = "1oGnsg_GiF192_8JplZvYoTEgJoVGcGuytFaqqqz57JA"; const SHEETS = [ "CONFIG", "PARTICIPANTES", "EQUIPOS", "PARTIDOS", "RESULTADOS", "PRONOSTICOS", "BONOS", "RESULTADOS_BONOS" ]; const DEFAULT_CONFIG = { nombre_polla: "Polla Mundialista Knockouts", moneda: "USD", aporte_por_participante: 10, premio_consuelo_fijo: 1, minimo_pronosticos_consuelo: 0.8, puntos_exactos: 5, puntos_diferencia: 4, puntos_clasificado: 3, bono_campeon: 20, bono_subcampeon: 12, bono_goleador: 10, bono_semifinalista: 8, premio_primero_pct: 0.55, premio_segundo_pct: 0.25, premio_tercero_pct: 0.12, premio_exactos_pct: 0.08 }; const FALLBACK_EMOJIS = { "Argentina":"🇦🇷","Brasil":"🇧🇷","Ecuador":"🇪🇨","México":"🇲🇽","Mexico":"🇲🇽", "Canadá":"🇨🇦","Canada":"🇨🇦","España":"🇪🇸","Spain":"🇪🇸","Francia":"🇫🇷","France":"🇫🇷", "Portugal":"🇵🇹","Alemania":"🇩🇪","Germany":"🇩🇪","Inglaterra":"🏴","England":"🏴", "Estados Unidos":"🇺🇸","United States":"🇺🇸","Colombia":"🇨🇴","Uruguay":"🇺🇾", "Japón":"🇯🇵","Japan":"🇯🇵","Marruecos":"🇲🇦","Morocco":"🇲🇦","Croacia":"🇭🇷","Croatia":"🇭🇷", "Bélgica":"🇧🇪","Belgium":"🇧🇪","Suiza":"🇨🇭","Switzerland":"🇨🇭","Senegal":"🇸🇳", "Ghana":"🇬🇭","Noruega":"🇳🇴","Norway":"🇳🇴","Suecia":"🇸🇪","Sweden":"🇸🇪", "Australia":"🇦🇺","Egipto":"🇪🇬","Egypt":"🇪🇬","Paraguay":"🇵🇾","Austria":"🇦🇹", "Argelia":"🇩🇿","Algeria":"🇩🇿","Sudáfrica":"🇿🇦","South Africa":"🇿🇦" }; function clean(v){ if(v === null || v === undefined) return ""; return String(v).trim(); } function norm(v){ return clean(v) .toLowerCase() .normalize("NFD") .replace(/[\u0300-\u036f]/g,"") .replace(/\s+/g," "); } function num(v){ if(v === null || v === undefined || v === "") return null; const n = Number(String(v).replace(",",".")); return Number.isFinite(n) ? n : null; } function money(v){ const n = Number(v || 0); return "$" + n.toFixed(2); } function pct(v){ return Math.round(Number(v || 0) * 100) + "%"; } function statusClass(v){ const s = norm(v); if(s.includes("final")) return "finalizado"; if(s.includes("suspend")) return "suspendido"; return "pendiente"; } function isFinal(v){ return norm(v).includes("final"); } function esc(s){ return clean(s).replace(/[&<>"']/g, m => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[m])); } function fetchSheet(sheetName){ return new Promise((resolve, reject) => { const callbackName = "gsCallback_" + Date.now() + "_" + Math.floor(Math.random() * 100000); const cacheBust = Date.now(); const url = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq` + `?sheet=${encodeURIComponent(sheetName)}` + `&tqx=out:json;responseHandler:${callbackName}` + `&cacheBust=${cacheBust}`; const script = document.createElement("script"); const cleanup = () => { delete window[callbackName]; if (script.parentNode) script.parentNode.removeChild(script); clearTimeout(timer); }; const timer = setTimeout(() => { cleanup(); reject(new Error(`Tiempo agotado leyendo la hoja ${sheetName}`)); }, 15000); window[callbackName] = function(json){ try{ const table = json.table; const headers = table.cols.map((c, i) => { return clean(c.label || c.id || `col_${i}`); }); const rows = table.rows.map(r => { const obj = {}; headers.forEach((h, i) => { const cell = r.c[i]; obj[h] = cell ? (cell.f ?? cell.v ?? "") : ""; }); return obj; }); cleanup(); resolve(rows.filter(row => Object.values(row).some(v => clean(v) !== ""))); }catch(e){ cleanup(); reject(e); } }; script.onerror = () => { cleanup(); reject(new Error(`No se pudo cargar la hoja ${sheetName}`)); }; script.src = url; document.body.appendChild(script); }); } async function loadData(){ const data = {}; await Promise.all(SHEETS.map(async s => { try{ data[s] = await fetchSheet(s); }catch(e){ data[s] = []; console.warn(e); } })); return data; } function configFromRows(rows){ const cfg = {...DEFAULT_CONFIG}; rows.forEach(r => { const key = clean(r.clave || r.key || r.parametro); const value = r.valor ?? r.value ?? ""; if(!key) return; const n = num(value); cfg[key] = n !== null && value !== "" ? n : value; }); return cfg; } function buildEmojiMap(equipos){ const m = {...FALLBACK_EMOJIS}; equipos.forEach(r => { const equipo = clean(r.equipo || r.Equipo || r.team); const emoji = clean(r.emoji || r.Emoji || r.bandera); if(equipo && emoji) m[equipo] = emoji; }); return m; } function emojiOf(team, emojiMap){ if(!team) return ""; if(emojiMap[team]) return emojiMap[team]; const key = Object.keys(emojiMap).find(k => norm(k) === norm(team)); return key ? emojiMap[key] : "🏳️"; } function loserOf(result, p){ const clasifica = clean(result.clasifica_real); if(!clasifica) return clean(result.pierde_real); const e1 = clean(result.equipo_1 || p?.equipo_1); const e2 = clean(result.equipo_2 || p?.equipo_2); if(norm(clasifica) === norm(e1)) return e2; if(norm(clasifica) === norm(e2)) return e1; return clean(result.pierde_real); } function resolveBracket(partidos, resultados, emojiMap){ const resMap = new Map(resultados.map(r => [clean(r.id_partido), r])); const partMap = new Map(partidos.map(p => [clean(p.id_partido), p])); function resolveSide(p, side){ const tipo = clean(p[`source_${side}_tipo`]); const ref = clean(p[`source_${side}_partido`]); const manual = clean(p[`equipo_${side}_manual`]); const formula = clean(p[`equipo_${side}`]); if(formula && !formula.startsWith("Ganador") && !formula.startsWith("Perdedor")) return formula; if(tipo === "Manual") return manual || formula; if(tipo === "Ganador"){ const r = resMap.get(ref); return clean(r?.clasifica_real) || `Ganador ${ref}`; } if(tipo === "Perdedor"){ const r = resMap.get(ref); const refPart = partMap.get(ref); return loserOf(r || {}, refPart) || `Perdedor ${ref}`; } return formula || manual; } for(let i=0;i<5;i++){ partidos.forEach(p => { p.equipo_1_resuelto = resolveSide(p, "1"); p.equipo_2_resuelto = resolveSide(p, "2"); p.emoji_1_resuelto = clean(p.emoji_1 || p.emoji_1_manual) || emojiOf(p.equipo_1_resuelto, emojiMap); p.emoji_2_resuelto = clean(p.emoji_2 || p.emoji_2_manual) || emojiOf(p.equipo_2_resuelto, emojiMap); }); } return partidos; } function calcScores(data, cfg, emojiMap){ const participantes = data.PARTICIPANTES .filter(r => clean(r.participante)) .filter(r => !["no","false","0","inactivo"].includes(norm(r.activo))) .map(r => ({ nombre: clean(r.participante), aporte: num(r.aporte) ?? Number(cfg.aporte_por_participante || 10) })); const partidos = resolveBracket(data.PARTIDOS.map(r => ({...r})), data.RESULTADOS, emojiMap) .filter(p => clean(p.id_partido)); const partMap = new Map(partidos.map(p => [clean(p.id_partido), p])); const resMap = new Map(data.RESULTADOS.map(r => [clean(r.id_partido), r])); const predMap = new Map(); data.PRONOSTICOS.forEach(p => { const participante = clean(p.participante); const id = clean(p.id_partido); if(!participante || !id) return; predMap.set(`${norm(participante)}|${id}`, p); }); const stats = new Map(); participantes.forEach(p => { stats.set(norm(p.nombre), { participante:p.nombre, aporte:p.aporte, puntos_partidos:0, puntos_bonos:0, total:0, exactos:0, clasificados:0, pronosticos_enviados:0, posibles_pronosticos:partidos.length, detalle:[] }); }); partidos.forEach(match => { const id = clean(match.id_partido); const r = resMap.get(id) || {}; const finalizado = isFinal(r.estado); const g1r = num(r.goles_1_real); const g2r = num(r.goles_2_real); const clasificaReal = clean(r.clasifica_real); participantes.forEach(part => { const st = stats.get(norm(part.nombre)); const pred = predMap.get(`${norm(part.nombre)}|${id}`); let puntos = 0; let tipo = "Sin pronóstico"; let exacto = false; let enviado = false; if(pred && clean(pred.clasifica_pred)){ enviado = true; st.pronosticos_enviados++; } if(finalizado && pred && clasificaReal){ const g1p = num(pred.goles_1_pred); const g2p = num(pred.goles_2_pred); const clasificaPred = clean(pred.clasifica_pred); if(g1p !== null && g2p !== null && clasificaPred){ const clasificadoOk = norm(clasificaPred) === norm(clasificaReal); const marcadorExacto = g1p === g1r && g2p === g2r; const difOk = (g1p - g2p) === (g1r - g2r); if(clasificadoOk && marcadorExacto){ puntos = Number(cfg.puntos_exactos || 5); tipo = "Exacto"; exacto = true; st.exactos++; st.clasificados++; }else if(clasificadoOk && difOk){ puntos = Number(cfg.puntos_diferencia || 4); tipo = "Clasificado + diferencia"; st.clasificados++; }else if(clasificadoOk){ puntos = Number(cfg.puntos_clasificado || 3); tipo = "Clasificado"; st.clasificados++; }else{ puntos = 0; tipo = "Falló"; } } }else if(!finalizado && enviado){ tipo = "Pendiente"; } st.puntos_partidos += puntos; st.detalle.push({ id, fase: clean(match.fase), equipo_1: match.equipo_1_resuelto, equipo_2: match.equipo_2_resuelto, emoji_1: match.emoji_1_resuelto, emoji_2: match.emoji_2_resuelto, goles_1_real:g1r, goles_2_real:g2r, clasifica_real:clasificaReal, goles_1_pred: pred ? clean(pred.goles_1_pred) : "", goles_2_pred: pred ? clean(pred.goles_2_pred) : "", clasifica_pred: pred ? clean(pred.clasifica_pred) : "", puntos, tipo, exacto }); }); }); const realBonuses = {}; data.RESULTADOS_BONOS.forEach(r => { const bono = norm(r.bono); const valor = clean(r.valor_real); if(bono && valor) realBonuses[bono] = valor; }); const r104 = resMap.get("M104") || {}; const m101 = partMap.get("M101") || {}; const m102 = partMap.get("M102") || {}; realBonuses.campeon = realBonuses.campeon || clean(r104.clasifica_real); realBonuses.subcampeon = realBonuses.subcampeon || loserOf(r104, partMap.get("M104")); realBonuses.semifinalista_1 = realBonuses.semifinalista_1 || clean(m101.equipo_1_resuelto); realBonuses.semifinalista_2 = realBonuses.semifinalista_2 || clean(m101.equipo_2_resuelto); realBonuses.semifinalista_3 = realBonuses.semifinalista_3 || clean(m102.equipo_1_resuelto); realBonuses.semifinalista_4 = realBonuses.semifinalista_4 || clean(m102.equipo_2_resuelto); const semifinalistasReales = [ realBonuses.semifinalista_1, realBonuses.semifinalista_2, realBonuses.semifinalista_3, realBonuses.semifinalista_4 ].filter(Boolean).map(norm); data.BONOS.forEach(b => { const st = stats.get(norm(b.participante)); if(!st) return; let pts = 0; if(realBonuses.campeon && norm(b.campeon) === norm(realBonuses.campeon)) pts += Number(cfg.bono_campeon || 20); if(realBonuses.subcampeon && norm(b.subcampeon) === norm(realBonuses.subcampeon)) pts += Number(cfg.bono_subcampeon || 12); if(realBonuses.goleador && norm(b.goleador) === norm(realBonuses.goleador)) pts += Number(cfg.bono_goleador || 10); ["semifinalista_1","semifinalista_2","semifinalista_3","semifinalista_4"].forEach(k => { const pred = norm(b[k]); if(pred && semifinalistasReales.includes(pred)) pts += Number(cfg.bono_semifinalista || 8); }); st.puntos_bonos = pts; }); const ranking = Array.from(stats.values()).map(st => { st.total = st.puntos_partidos + st.puntos_bonos; return st; }).sort((a,b) => b.total - a.total || b.exactos - a.exactos || b.clasificados - a.clasificados || a.participante.localeCompare(b.participante) ); return {participantes, partidos, resultados:data.RESULTADOS, ranking, stats, realBonuses}; } function calcAwards(ranking, participantes, cfg){ const pozo = participantes.reduce((s,p)=>s + Number(p.aporte || 0),0); const consuelo = Number(cfg.premio_consuelo_fijo || 1); const repartible = Math.max(0, pozo - consuelo); const exactLeader = [...ranking].sort((a,b) => b.exactos - a.exactos || b.total - a.total || a.participante.localeCompare(b.participante) )[0]; const minRatio = Number(cfg.minimo_pronosticos_consuelo || 0.8); const eligible = ranking.filter(r => { const ratio = r.posibles_pronosticos ? r.pronosticos_enviados / r.posibles_pronosticos : 0; return ratio >= minRatio; }); const consueloLeader = (eligible.length ? eligible : ranking).slice().sort((a,b) => a.total - b.total || a.exactos - b.exactos || a.clasificados - b.clasificados || a.participante.localeCompare(b.participante) )[0]; return { pozo, consuelo, repartible, primero: repartible * Number(cfg.premio_primero_pct || .55), segundo: repartible * Number(cfg.premio_segundo_pct || .25), tercero: repartible * Number(cfg.premio_tercero_pct || .12), exactos: repartible * Number(cfg.premio_exactos_pct || .08), exactLeader, consueloLeader }; } function renderKPIs(model, awards){ const jugados = model.partidos.filter(p => { const r = model.resultados.find(x => clean(x.id_partido) === clean(p.id_partido)); return r && isFinal(r.estado); }).length; const lider = model.ranking[0]?.participante || "-"; const html = [ ["👑 Líder", lider], ["👥 Participantes", model.participantes.length], ["⚽ Partidos jugados", `${jugados}/${model.partidos.length}`], ["💰 Pozo", money(awards.pozo)] ].map(([label,value]) => ` <div class="card"> <div class="label">${label}</div> <div class="value">${value}</div> </div> `).join(""); document.getElementById("kpis").innerHTML = html; } function renderAwards(awards){ const cards = [ ["🥇 1er lugar", awards.primero, ""], ["🥈 2do lugar", awards.segundo, ""], ["🥉 3er lugar", awards.tercero, ""], ["🎯 Más exactos", awards.exactos, awards.exactLeader ? awards.exactLeader.participante : ""], ["🪦 Consuelo", awards.consuelo, awards.consueloLeader ? awards.consueloLeader.participante : ""] ]; document.getElementById("awards").innerHTML = cards.map(([label,value,who]) => ` <div class="card"> <div class="label">${label}</div> <div class="value">${money(value)}</div> ${who ? `<div class="muted small">Actual: ${esc(who)}</div>` : ""} </div> `).join(""); } function renderRanking(ranking){ let html = ` <table> <thead> <tr> <th>Pos</th> <th>Participante</th> <th class="right">Partidos</th> <th class="right">Bonos</th> <th class="right">Exactos</th> <th class="right">Total</th> </tr> </thead> <tbody> `; ranking.forEach((r,i) => { const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1; const cls = i === 0 ? "r1" : i === 1 ? "r2" : i === 2 ? "r3" : ""; html += ` <tr> <td><span class="rank ${cls}">${medal}</span></td> <td class="strong">${esc(r.participante)}</td> <td class="right">${r.puntos_partidos}</td> <td class="right">${r.puntos_bonos}</td> <td class="right">${r.exactos}</td> <td class="right strong">${r.total}</td> </tr> `; }); html += "</tbody></table>"; document.getElementById("ranking").innerHTML = html; } function renderExactos(ranking){ const rows = [...ranking].sort((a,b) => b.exactos - a.exactos || b.total - a.total || a.participante.localeCompare(b.participante) ); let html = ` <table> <thead> <tr> <th>Participante</th> <th class="right">Exactos</th> <th class="right">Total</th> </tr> </thead> <tbody> `; rows.forEach(r => { html += ` <tr> <td class="strong">${esc(r.participante)}</td> <td class="right">🎯 ${r.exactos}</td> <td class="right">${r.total}</td> </tr> `; }); html += "</tbody></table>"; document.getElementById("exactos").innerHTML = html; } function roundName(fase){ const f = norm(fase); if(f.includes("32")) return "Ronda de 32"; if(f.includes("16") || f.includes("octavos")) return "Octavos"; if(f.includes("cuarto")) return "Cuartos"; if(f.includes("semi")) return "Semis"; if(f.includes("final")) return "Final"; return clean(fase) || "Partidos"; } function renderBracket(model){ const order = ["Ronda de 32","Octavos","Cuartos","Semis","Final"]; const groups = {}; model.partidos.forEach(p => { const name = roundName(p.fase); if(!groups[name]) groups[name] = []; groups[name].push(p); }); document.getElementById("bracket").innerHTML = order .filter(r => groups[r]) .map(r => ` <div class="round"> <h3>${r}</h3> ${groups[r].map(p => { const res = model.resultados.find(x => clean(x.id_partido) === clean(p.id_partido)) || {}; const final = isFinal(res.estado); const win = clean(res.clasifica_real); const e1 = clean(p.equipo_1_resuelto); const e2 = clean(p.equipo_2_resuelto); const c1 = final && norm(win) === norm(e1) ? "winner" : final ? "loser" : ""; const c2 = final && norm(win) === norm(e2) ? "winner" : final ? "loser" : ""; const score = final ? `${clean(res.goles_1_real)} - ${clean(res.goles_2_real)}` : "vs"; return ` <div class="mini-match"> <div class="small muted">${esc(p.id_partido)} · ${esc(p.fecha)} · ${esc(p.hora_ecuador)}</div> <div class="mini-line ${c1}"> <span>${esc(p.emoji_1_resuelto)} ${esc(e1)}</span> <span>${final ? esc(res.goles_1_real) : ""}</span> </div> <div class="mini-line ${c2}"> <span>${esc(p.emoji_2_resuelto)} ${esc(e2)}</span> <span>${final ? esc(res.goles_2_real) : ""}</span> </div> <div class="small muted">${final ? "Clasifica: " + esc(win) : score}</div> </div> `; }).join("")} </div> `).join(""); } function renderMatches(model){ const sorted = [...model.partidos].sort((a,b) => Number(a.orden || 999) - Number(b.orden || 999)); document.getElementById("matches").innerHTML = sorted.map(p => { const r = model.resultados.find(x => clean(x.id_partido) === clean(p.id_partido)) || {}; const final = isFinal(r.estado); const estado = clean(r.estado || p.estado || "Pendiente"); const score = final ? `${clean(r.goles_1_real)} - ${clean(r.goles_2_real)}` : "vs"; return ` <div class="card match-card"> <div class="meta"> <span class="pill">${esc(p.id_partido)}</span> <span class="pill">${esc(roundName(p.fase))}</span> <span class="status ${statusClass(estado)}">${esc(estado)}</span> </div> <div class="teams"> <div class="team">${esc(p.emoji_1_resuelto)} ${esc(p.equipo_1_resuelto)}</div> <div class="score">${esc(score)}</div> <div class="team">${esc(p.equipo_2_resuelto)} ${esc(p.emoji_2_resuelto)}</div> </div> <div class="meta"> <span>📅 ${esc(p.fecha)}</span> <span>🕒 ${esc(p.hora_ecuador)}</span> ${final ? `<span>✅ Clasifica: <b>${esc(r.clasifica_real)}</b></span>` : ""} </div> </div> `; }).join(""); } function renderDetails(model){ const completed = model.partidos.filter(p => { const r = model.resultados.find(x => clean(x.id_partido) === clean(p.id_partido)); return r && isFinal(r.estado); }); if(!completed.length){ document.getElementById("details").innerHTML = ` <div class="card">Todavía no hay partidos finalizados. Cuando cargues resultados en la hoja RESULTADOS aparecerán aquí los puntos por partido.</div> `; return; } document.getElementById("details").innerHTML = completed.map(p => { const r = model.resultados.find(x => clean(x.id_partido) === clean(p.id_partido)) || {}; const rows = model.ranking .map(st => st.detalle.find(d => d.id === clean(p.id_partido))) .filter(Boolean) .sort((a,b) => b.puntos - a.puntos || a.clasifica_pred.localeCompare(b.clasifica_pred)); return ` <div class="prediction-card"> <h3>${esc(p.emoji_1_resuelto)} ${esc(p.equipo_1_resuelto)} ${esc(r.goles_1_real)} - ${esc(r.goles_2_real)} ${esc(p.equipo_2_resuelto)} ${esc(p.emoji_2_resuelto)}</h3> <div class="meta"> <span class="pill">${esc(p.id_partido)}</span> <span>✅ Clasifica: <b>${esc(r.clasifica_real)}</b></span> </div> <div style="margin-top:12px"> ${rows.map(d => { const icon = d.puntos >= 5 ? "🎯" : d.puntos > 0 ? "✅" : "❌"; const cls = d.puntos >= 5 ? "ok" : d.puntos > 0 ? "ok" : "bad"; const pred = d.clasifica_pred ? `${esc(d.goles_1_pred)} - ${esc(d.goles_2_pred)} · clasifica ${esc(d.clasifica_pred)}` : "No envió"; return ` <div class="pred-row"> <div class="strong">${icon} ${esc(model.ranking.find(x => x.detalle.includes(d))?.participante || "")}</div> <div>${pred}</div> <div class="${cls}">${esc(d.tipo)}</div> <div class="pts">${d.puntos} pts</div> </div> `; }).join("")} </div> </div> `; }).join(""); } function render(model, cfg){ const awards = calcAwards(model.ranking, model.participantes, cfg); renderKPIs(model, awards); renderAwards(awards); renderRanking(model.ranking); renderExactos(model.ranking); renderBracket(model); renderMatches(model); renderDetails(model); document.getElementById("loading").style.display = "none"; document.getElementById("lastUpdate").textContent = "Actualizado: " + new Date().toLocaleString("es-EC"); } function showError(msg){ const box = document.getElementById("errorBox"); box.style.display = "block"; box.innerHTML = msg; document.getElementById("loading").style.display = "none"; } async function main(){ try{ const data = await loadData(); const cfg = configFromRows(data.CONFIG || []); const emojiMap = buildEmojiMap(data.EQUIPOS || []); const model = calcScores(data, cfg, emojiMap); if(!model.participantes.length){ showError(` No pude leer participantes. Revisa que la hoja tenga una pestaña llamada <b>PARTICIPANTES</b> y que el archivo esté compartido como lector. `); return; } render(model, cfg); }catch(e){ console.error(e); showError(` No pude cargar la Google Sheet.<br><br> Revisa esto:<br> 1. Compartir → Cualquier persona con enlace → Lector.<br> 2. Si tu archivo sigue siendo Excel, ve a Archivo → Guardar como Hojas de cálculo de Google.<br> 3. Verifica que existan las hojas: CONFIG, PARTICIPANTES, EQUIPOS, PARTIDOS, RESULTADOS, PRONOSTICOS, BONOS y RESULTADOS_BONOS.<br><br> Error: ${esc(e.message)} `); } } main(); </script>
+
+</body> </html>
+
+
+Cerrar
