@@ -417,9 +417,14 @@
 <body>
   <div class="wrap">
     <section class="hero">
-      <h1>Polla 🍆 Mundialista ⚽</h1>
-
-    </section>
+  <h1>Polla 🍆 Mundialista ⚽</h1>
+  
+    <div class="toolbar">
+      <span class="badge" id="lastUpdate">Actualizando...</span>
+    </div>
+  
+    <div id="errorBox" class="error"></div>
+  </section>
 
     <div id="loading" class="loading">Cargando datos - Leño maricón...</div>
 
@@ -696,13 +701,33 @@ function fetchSheet(sheetName){
     }
 
     function calcScores(data, cfg, emojiMap){
-      const participantes = data.PARTICIPANTES
-        .filter(r => clean(r.participante))
-        .filter(r => !["no","false","0","inactivo"].includes(norm(r.activo)))
-        .map(r => ({
-          nombre: clean(r.participante),
-          aporte: num(r.aporte) ?? Number(cfg.aporte_por_participante || 10)
-        }));
+      const participantesBase = data.PARTICIPANTES
+  .filter(r => clean(r.participante))
+  .filter(r => !["no","false","0","inactivo"].includes(norm(r.activo)))
+  .map(r => ({
+    nombre: clean(r.participante),
+    aporte: num(r.aporte) ?? Number(cfg.aporte_por_participante || 10)
+  }));
+
+const participantesMap = new Map();
+
+participantesBase.forEach(p => {
+  participantesMap.set(norm(p.nombre), p);
+});
+
+data.PRONOSTICOS.forEach(r => {
+  const nombre = clean(r.participante);
+  if (!nombre) return;
+
+  if (!participantesMap.has(norm(nombre))) {
+    participantesMap.set(norm(nombre), {
+      nombre,
+      aporte: Number(cfg.aporte_por_participante || 10)
+    });
+  }
+});
+
+const participantes = Array.from(participantesMap.values());
 
       const partidos = resolveBracket(data.PARTIDOS.map(r => ({...r})), data.RESULTADOS, emojiMap)
         .filter(p => clean(p.id_partido));
