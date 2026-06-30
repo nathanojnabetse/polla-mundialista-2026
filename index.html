@@ -420,6 +420,7 @@
       <div class="rule"><b>5 pts</b>Marcador exacto + clasificado correcto.</div>
       <div class="rule"><b>4 pts</b>Clasificado correcto + diferencia correcta.</div>
       <div class="rule"><b>3 pts</b>Clasificado correcto.</div>
+      <div class="rule"><b>2 pts</b>Marcador exacto, pero falló el clasificado.</div>
       <div class="rule"><b>0 pts</b>Falló o no mandó pronóstico.</div>
     </section>
   </div>
@@ -445,6 +446,7 @@
       puntos_exactos: 5,
       puntos_diferencia: 4,
       puntos_clasificado: 3,
+      puntos_marcador_sin_clasificado: 2,
       bono_campeon: 20,
       bono_subcampeon: 12,
       bono_goleador: 10,
@@ -815,6 +817,9 @@
                 puntos = Number(cfg.puntos_clasificado || 3);
                 tipo = "Clasificado";
                 st.clasificados++;
+              }else if(marcadorExacto){
+                puntos = Number(cfg.puntos_marcador_sin_clasificado || 2);
+                tipo = "Marcador exacto, falló clasificado";
               }else{
                 puntos = 0;
                 tipo = "Falló";
